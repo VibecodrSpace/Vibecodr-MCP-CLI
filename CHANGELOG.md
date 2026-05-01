@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7
+
+- add the `pulse-setup` command for live Pulse setup guidance
+- align CLI Pulse setup docs with the gateway runtime contract for policy-bound secrets, Stripe-first webhook helper guidance, generic HMAC presets, and provider-scoped connections
+- refresh release-lock coverage for current in-range MCP SDK, keyring, and Node type packages before publishing
+
 ## 0.1.6
 
 - make printed OAuth authorization URLs the default login behavior
