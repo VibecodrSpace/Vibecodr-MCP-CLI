@@ -15,6 +15,7 @@ import { runDoctorCommand } from "../commands/doctor.js";
 import { runConfigCommand } from "../commands/config.js";
 import { runInstallCommand } from "../commands/install.js";
 import { runUninstallCommand } from "../commands/uninstall.js";
+import { runPulseSetupCommand } from "../commands/pulse-setup.js";
 
 function helpText(): string {
   return [
@@ -31,6 +32,7 @@ function helpText(): string {
     "  install <client>",
     "  uninstall <client>",
     "  config",
+    "  pulse-setup [--descriptor-setup-json <json> | --descriptor-setup-file <path>]",
     "",
     "Global flags:",
     "  --profile <name>",
@@ -89,6 +91,9 @@ async function main(): Promise<void> {
       return;
     case "config":
       await runConfigCommand(commandArgs, context);
+      return;
+    case "pulse-setup":
+      await runPulseSetupCommand(commandArgs, context);
       return;
     default:
       throw new CliError("usage.command", `Unknown command: ${command}`, EXIT_CODES.usage);

@@ -24,6 +24,7 @@ Currently implemented command surface:
 - `status`
 - `tools`
 - `call`
+- `pulse-setup`
 - `doctor`
 - `config`
 - `install`

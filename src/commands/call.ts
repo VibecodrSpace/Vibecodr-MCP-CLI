@@ -35,7 +35,7 @@ async function readStdin(): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-async function callToolWithRetry(
+export async function callToolWithRetry(
   context: CommandContext,
   toolName: string,
   input: Record<string, unknown>,

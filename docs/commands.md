@@ -59,6 +59,20 @@ Syntax:
 
 `--interactive` currently supports top-level scalar object fields.
 
+For `quick_publish_creation` with `payload.importMode: "direct_files"`, pass file paths as normal slash-separated project paths such as `src/main.tsx` or `src/server/binding-proof.js`. Do not pre-encode slashes as `%2F`; the hosted MCP gateway encodes each URL segment when it writes files to Vibecodr.
+
+### `pulse-setup`
+
+Syntax:
+
+`vibecodr-mcp pulse-setup [--json] [--descriptor-setup-json <json> | --descriptor-setup-file <path>]`
+
+Calls the live `get_pulse_setup_guidance` MCP tool. Pass a `PulseDescriptorSetupProjection` through `--descriptor-setup-json` or `--descriptor-setup-file` when you have one; the CLI forwards it as `descriptorSetup` and verifies the MCP response evaluated that descriptor. Without a descriptor projection, the command returns general Pulse setup rules and must not be treated as proof that a specific Pulse needs or does not need backend setup.
+
+The CLI does not maintain separate Pulse setup copy; it reads MCP output derived from the API projection owned by `PulseDescriptor`.
+
+The returned guidance should stay capability-shaped: `env.fetch` is Vibecodr policy-mediated fetch, `env.secrets.bearer/header/query/verifyHmac` are policy-bound secret helpers, `env.webhooks.verify("stripe")` is the first certified provider helper rather than the whole webhook model, non-Stripe signed webhooks use generic HMAC format presets such as `github-sha256`, `shopify-hmac-sha256`, and `slack-v0` until fixture-backed helpers exist, `env.connections.use(provider).fetch` is provider-scoped connected-account access, `env.log` is structured logging, `env.request` is sanitized request access, `env.runtime` is safe correlation metadata, and `env.waitUntil` is best-effort after-response work. The CLI must not introduce separate cleanup, platform-binding, dispatch, raw-token, raw-authorization, or physical-storage guidance.
+
 ### `doctor`
 
 Syntax:
