@@ -1,6 +1,7 @@
 import { parseFlags } from "../cli/parse.js";
 import { CliError, EXIT_CODES } from "../cli/errors.js";
 import { defaultProfileConfig } from "../types/config.js";
+import { showHelpIfRequested } from "./help.js";
 import type { BrowserMode, ConfigFile, LogLevel, ProfileConfig, RegistrationMode } from "../types/config.js";
 import type { CommandContext } from "./context.js";
 
@@ -43,6 +44,7 @@ async function saveConfig(context: CommandContext, config: ConfigFile): Promise<
 }
 
 export async function runConfigCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr config path|show|set|unset|profile ...")) return;
   const action = args[0];
   const config = await context.configStore.load();
   const currentProfileName = context.globalOptions.profile || config.currentProfile;

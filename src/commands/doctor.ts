@@ -1,9 +1,11 @@
 import { parseFlags } from "../cli/parse.js";
 import { runDoctor } from "../doctor/run.js";
 import { EXIT_CODES } from "../cli/errors.js";
+import { showHelpIfRequested } from "./help.js";
 import type { CommandContext } from "./context.js";
 
 export async function runDoctorCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr doctor [--client <codex|cursor|vscode|windsurf>]")) return;
   const { flags } = parseFlags(args, {
     valueFlags: ["client"]
   });

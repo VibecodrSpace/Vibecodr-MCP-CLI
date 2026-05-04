@@ -3,6 +3,7 @@ import { CliError, EXIT_CODES } from "../cli/errors.js";
 import { parseFlags } from "../cli/parse.js";
 import { renderToolResult } from "../core/renderers.js";
 import { callToolWithRetry } from "./call.js";
+import { showHelpIfRequested } from "./help.js";
 import type { CommandContext } from "./context.js";
 
 const PULSE_SETUP_TOOL_NAME = "get_pulse_setup_guidance";
@@ -106,6 +107,7 @@ async function parsePulseSetupInput(args: string[]): Promise<Record<string, unkn
 }
 
 export async function runPulseSetupCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr pulse-setup [--descriptor-setup-json <json> | --descriptor-setup-file <path>]")) return;
   const input = await parsePulseSetupInput(args);
   const { result } = await callToolWithRetry(context, PULSE_SETUP_TOOL_NAME, input, true);
   assertDescriptorSetupGuidance(result, { expectsDescriptorSetup: Boolean(input["descriptorSetup"]) });

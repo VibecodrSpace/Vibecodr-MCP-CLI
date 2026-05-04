@@ -5,10 +5,12 @@ import { uninstallCodex } from "../clients/codex.js";
 import { uninstallCursor } from "../clients/cursor.js";
 import { uninstallVsCode } from "../clients/vscode.js";
 import { uninstallWindsurf } from "../clients/windsurf.js";
+import { showHelpIfRequested } from "./help.js";
 import type { ClientTarget } from "../types/install.js";
 import type { CommandContext } from "./context.js";
 
 export async function runUninstallCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr uninstall <codex|cursor|vscode|windsurf> [--scope user|project] [--path <dir>] [--name <server-name>] [--dry-run]")) return;
   const client = args[0] as ClientTarget | undefined;
   if (!client || !["codex", "cursor", "vscode", "windsurf"].includes(client)) {
     throw new CliError("usage.uninstall_client", "Usage: uninstall <codex|cursor|vscode|windsurf> [options]", EXIT_CODES.usage);

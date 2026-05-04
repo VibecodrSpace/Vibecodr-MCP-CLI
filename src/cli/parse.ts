@@ -7,7 +7,15 @@ type ParsedFlags = {
 };
 
 function normalizeFlagName(flag: string): string {
-  return flag.replace(/^--/, "");
+  return flag.replace(/^-+/, "");
+}
+
+export function isHelpToken(token: string | undefined): boolean {
+  return token === "help" || token === "--help" || token === "-h" || token === "-help";
+}
+
+export function isVersionToken(token: string | undefined): boolean {
+  return token === "--version" || token === "-v" || token === "-version";
 }
 
 export function parseFlags(
@@ -66,6 +74,10 @@ export function parseGlobalOptions(argv: string[]): {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (token === undefined) continue;
+    if (!command && (isHelpToken(token) || isVersionToken(token))) {
+      command = token;
+      continue;
+    }
     if (token === "--profile") {
       const value = argv[index + 1];
       if (!value) throw new CliError("usage.missing_profile", "Missing value for --profile.", EXIT_CODES.usage);

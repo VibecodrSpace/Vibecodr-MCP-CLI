@@ -3,6 +3,7 @@ import { CliError, EXIT_CODES } from "../cli/errors.js";
 import { parseFlags } from "../cli/parse.js";
 import { renderToolResult } from "../core/renderers.js";
 import { callToolWithRetry } from "./call.js";
+import { showHelpIfRequested } from "./help.js";
 import type { CommandContext } from "./context.js";
 
 const PUBLISH_STANDALONE_PULSE_TOOL_NAME = "publish_standalone_pulse";
@@ -95,6 +96,7 @@ function redactPulsePublishArguments(input: Record<string, unknown>): Record<str
 }
 
 export async function runPulsePublishCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr pulse-publish --name <name> (--code <source> | --code-file <path>) [--descriptor-json <json> | --descriptor-file <path>] [--slug <slug>] [--visibility public|unlisted|private] --confirm")) return;
   const input = await parsePulsePublishInput(args);
   const { result } = await callToolWithRetry(context, PUBLISH_STANDALONE_PULSE_TOOL_NAME, input, true);
 

@@ -350,6 +350,34 @@ async function loginIntoFileStore(serverUrl: string, env: Record<string, string>
   }
 }
 
+test("CLI supports help aliases everywhere and version aliases at root", async () => {
+  const temp = await mkdtemp(join(tmpdir(), "vibecodr-cli-help-"));
+  const env = {
+    VIBECDR_MCP_CONFIG_PATH: join(temp, "config.json"),
+    VIBECDR_MCP_INSTALL_MANIFEST_PATH: join(temp, "installs.json"),
+    VIBECDR_MCP_INSECURE_SECRET_STORE_PATH: join(temp, "secrets.json"),
+    VIBECDR_MCP_ENABLE_INSECURE_SECRET_STORE: "true"
+  };
+  const rootHelpAliases = ["--help", "-h", "-help"];
+  for (const alias of rootHelpAliases) {
+    const result = await runCli([alias], env);
+    assert.equal(result.code, 0, `${alias} failed\n${result.stderr}`);
+    assert.match(result.stdout, /vibecodr <command>/);
+  }
+  for (const alias of ["--version", "-v", "-version"]) {
+    const result = await runCli([alias], env);
+    assert.equal(result.code, 0, `${alias} failed\n${result.stderr}`);
+    assert.match(result.stdout.trim(), /^\d+\.\d+\.\d+$/);
+  }
+  for (const command of ["login", "logout", "status", "tools", "call", "pulse-setup", "pulse-publish", "pulse", "doctor", "config", "install", "uninstall"]) {
+    for (const alias of rootHelpAliases) {
+      const result = await runCli([command, alias], env);
+      assert.equal(result.code, 0, `${command} ${alias} failed\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
+      assert.match(result.stdout, /Usage:/);
+    }
+  }
+});
+
 test("CLI e2e covers login, protected tools/list + call, and logout revocation", async () => {
   const mock = await createMockServer({ requireAuthForList: true });
   const temp = await mkdtemp(join(tmpdir(), "vibecodr-cli-e2e-"));
@@ -370,7 +398,8 @@ test("CLI e2e covers login, protected tools/list + call, and logout revocation",
 
     const publishResult = await runCli([
       "--profile", "test", "call", "quick_publish_creation",
-      "--input-json", JSON.stringify({ title: "Ship it", tags: ["one"], metadata: { featured: true } }),
+      "--input-json", JSON.stringify({ title: "Ship it", tags: ["one"], metadata: { featured: true }, confirmed: true }),
+      "--confirm",
       "--json"
     ], env);
     assert.equal(publishResult.code, 0, `publish failed\nstdout:\n${publishResult.stdout}\nstderr:\n${publishResult.stderr}`);
@@ -378,7 +407,8 @@ test("CLI e2e covers login, protected tools/list + call, and logout revocation",
 
     const updateResult = await runCli([
       "--profile", "test", "call", "update_live_vibe_metadata",
-      "--input-json", JSON.stringify({ postId: "post_123" }),
+      "--input-json", JSON.stringify({ postId: "post_123", confirmed: true }),
+      "--confirm",
       "--json"
     ], env);
     assert.equal(updateResult.code, 0, `update failed\nstdout:\n${updateResult.stdout}\nstderr:\n${updateResult.stderr}`);
@@ -425,7 +455,8 @@ test("CLI clears stored auth after invalid_grant on refresh", async () => {
       await assert.rejects(
         runCallCommand([
           "quick_publish_creation",
-          "--input-json", JSON.stringify({ title: "Ship it", tags: ["one"], metadata: { featured: true } })
+          "--input-json", JSON.stringify({ title: "Ship it", tags: ["one"], metadata: { featured: true }, confirmed: true }),
+          "--confirm"
         ], {
           globalOptions: {
             profile: "test",

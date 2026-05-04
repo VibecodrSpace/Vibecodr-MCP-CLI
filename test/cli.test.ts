@@ -7,6 +7,7 @@ import { runCallCommand } from "../src/commands/call.js";
 import { runLoginCommand } from "../src/commands/login.js";
 import { runPulseSetupCommand } from "../src/commands/pulse-setup.js";
 import { runPulsePublishCommand } from "../src/commands/pulse-publish.js";
+import { runPulseCommand } from "../src/commands/pulse.js";
 import { Output } from "../src/cli/output.js";
 import { CliError, EXIT_CODES } from "../src/cli/errors.js";
 
@@ -21,6 +22,15 @@ test("parseGlobalOptions extracts shared flags around a command", () => {
   assert.equal(parsed.globalOptions.profile, "staging");
   assert.equal(parsed.globalOptions.json, true);
   assert.equal(Object.hasOwn(parsed.globalOptions, "serverUrl"), false);
+});
+
+test("parseGlobalOptions keeps root help and version aliases as commands", () => {
+  assert.equal(parseGlobalOptions(["--help"]).command, "--help");
+  assert.equal(parseGlobalOptions(["-h"]).command, "-h");
+  assert.equal(parseGlobalOptions(["-help"]).command, "-help");
+  assert.equal(parseGlobalOptions(["--version"]).command, "--version");
+  assert.equal(parseGlobalOptions(["-v"]).command, "-v");
+  assert.equal(parseGlobalOptions(["-version"]).command, "-version");
 });
 
 test("parseGlobalOptions rejects global server-url overrides so stored tokens cannot be redirected", () => {
@@ -64,7 +74,7 @@ test("renderToolResult prefers text content when present", () => {
   assert.equal(rendered, "Hello from a tool.");
 });
 
-test("call command forwards nested direct_files paths without pre-encoding them", async () => {
+test("call command forwards nested direct_files paths without pre-encoding them and redacts output arguments", async () => {
   const writes: string[] = [];
   const originalWrite = process.stdout.write.bind(process.stdout);
   process.stdout.write = ((chunk: string | Uint8Array) => {
@@ -86,7 +96,7 @@ test("call command forwards nested direct_files paths without pre-encoding them"
   };
 
   try {
-    await runCallCommand(["quick_publish_creation", "--input-json", JSON.stringify(input)], {
+    await runCallCommand(["quick_publish_creation", "--input-json", JSON.stringify(input), "--confirm"], {
       globalOptions: {
         profile: "default",
         json: true,
@@ -120,7 +130,268 @@ test("call command forwards nested direct_files paths without pre-encoding them"
 
   const parsed = JSON.parse(writes.join(""));
   assert.equal(parsed.tool, "quick_publish_creation");
-  assert.deepEqual(parsed.arguments, input);
+  assert.deepEqual(parsed.arguments.payload.files.map((file: { path: string }) => file.path), [
+    "src/main.tsx",
+    "src/server/binding-proof.js"
+  ]);
+  assert.equal(parsed.arguments.payload.files[0].content, "[redacted]");
+  assert.equal(parsed.arguments.payload.files[1].content, "[redacted]");
+  assert.doesNotMatch(JSON.stringify(parsed.arguments), /console\.log|export default/);
+});
+
+test("call command redacts known secret-bearing arguments in json output", async () => {
+  const writes: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = ((chunk: string | Uint8Array) => {
+    writes.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+  const input = {
+    token: "tok_live_secret",
+    Authorization: "Bearer private",
+    nested: {
+      OPENAI_API_KEY: "sk-private",
+      harmless: "kept"
+    }
+  };
+
+  try {
+    await runCallCommand(["configure_secret", "--input-json", JSON.stringify(input)], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {
+        resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+        getSession: async () => ({ accessToken: "token-1" })
+      } as never,
+      runtimeClient: {
+        callTool: async (_serverUrl: string, _accessToken: string | undefined, _name: string, actualInput: Record<string, unknown>) => {
+          assert.deepEqual(actualInput, input);
+          return { structuredContent: { ok: true } };
+        }
+      } as never
+    });
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+
+  const parsed = JSON.parse(writes.join(""));
+  assert.equal(parsed.arguments.token, "[redacted]");
+  assert.equal(parsed.arguments.Authorization, "[redacted]");
+  assert.equal(parsed.arguments.nested.OPENAI_API_KEY, "[redacted]");
+  assert.equal(parsed.arguments.nested.harmless, "kept");
+  assert.doesNotMatch(JSON.stringify(parsed), /tok_live_secret|Bearer private|sk-private/);
+});
+
+test("call command redacts known secret-bearing tool results in json output", async () => {
+  const writes: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = ((chunk: string | Uint8Array) => {
+    writes.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+
+  try {
+    await runCallCommand(["inspect_secret", "--input-json", "{}"], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {
+        resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+        getSession: async () => ({ accessToken: "token-1" })
+      } as never,
+      runtimeClient: {
+        callTool: async () => ({
+          content: [{ type: "text", text: "token: tok_private" }],
+          structuredContent: {
+            token: "tok_private",
+            code: "export default {}",
+            safe: "kept"
+          }
+        })
+      } as never
+    });
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+
+  const parsed = JSON.parse(writes.join(""));
+  assert.equal(parsed.result.structuredContent.token, "[redacted]");
+  assert.equal(parsed.result.structuredContent.code, "[redacted]");
+  assert.equal(parsed.result.structuredContent.safe, "kept");
+  assert.equal(parsed.result.content, "[redacted]");
+  assert.doesNotMatch(JSON.stringify(parsed), /tok_private|export default/);
+});
+
+test("call command requires explicit confirmation for known mutating tools", async () => {
+  await assert.rejects(
+    async () => runCallCommand(["archive_pulse", "--input-json", JSON.stringify({ pulseId: "pls_123" })], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {} as never,
+      runtimeClient: {} as never
+    }),
+    (error) => {
+      assert.ok(error instanceof CliError);
+      assert.equal(error.machineCode, "usage.confirmation_required");
+      return true;
+    }
+  );
+});
+
+test("pulse list command calls the lifecycle MCP tool with bounded pagination", async () => {
+  const writes: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = ((chunk: string | Uint8Array) => {
+    writes.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+
+  try {
+    await runPulseCommand(["list", "--limit", "50", "--offset", "2"], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {
+        resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+        getSession: async () => ({ accessToken: "token-1" })
+      } as never,
+      runtimeClient: {
+        callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string, input: Record<string, unknown>) => {
+          assert.equal(name, "list_pulses");
+          assert.deepEqual(input, { limit: 25, offset: 2 });
+          return { structuredContent: { pulses: [{ pulseId: "pls_1", name: "One" }] } };
+        }
+      } as never
+    });
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+
+  const parsed = JSON.parse(writes.join(""));
+  assert.equal(parsed.tool, "list_pulses");
+  assert.deepEqual(parsed.arguments, { limit: 25, offset: 2 });
+});
+
+test("pulse archive command requires explicit confirmation", async () => {
+  await assert.rejects(
+    async () => runPulseCommand(["archive", "pls_123"], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {} as never,
+      runtimeClient: {} as never
+    }),
+    (error) => {
+      assert.ok(error instanceof CliError);
+      assert.equal(error.machineCode, "usage.confirmation_required");
+      return true;
+    }
+  );
+});
+
+test("pulse run command forwards input without echoing secrets", async () => {
+  const writes: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = ((chunk: string | Uint8Array) => {
+    writes.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+  const input = { request: { token: "secret", value: "kept" } };
+
+  try {
+    await runPulseCommand(["run", "pls_123", "--input-json", JSON.stringify(input), "--confirm"], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {
+        resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+        getSession: async () => ({ accessToken: "token-1" })
+      } as never,
+      runtimeClient: {
+        callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string, actualInput: Record<string, unknown>) => {
+          assert.equal(name, "run_pulse");
+          assert.deepEqual(actualInput, { pulseId: "pls_123", input, confirmed: true });
+          return { structuredContent: { ok: true } };
+        }
+      } as never
+    });
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+
+  const parsed = JSON.parse(writes.join(""));
+  assert.equal(parsed.tool, "run_pulse");
+  assert.equal(parsed.arguments.input.request.token, "[redacted]");
+  assert.equal(parsed.arguments.input.request.value, "kept");
+  assert.doesNotMatch(JSON.stringify(parsed), /secret/);
 });
 
 test("call command does not send a stored token when the profile server changed", async () => {

@@ -1,8 +1,10 @@
 import { parseFlags } from "../cli/parse.js";
+import { showHelpIfRequested } from "./help.js";
 import type { BrowserMode, RegistrationMode } from "../types/config.js";
 import type { CommandContext } from "./context.js";
 
 export async function runLoginCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr login [--scope <oauth-scope>] [--registration auto|preregistered|cimd|dcr|manual] [--browser open|print] [--timeout-sec <n>]")) return;
   const { flags } = parseFlags(args, {
     valueFlags: ["scope", "registration", "browser", "timeout-sec"]
   });

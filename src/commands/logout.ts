@@ -1,7 +1,9 @@
 import { parseFlags } from "../cli/parse.js";
+import { showHelpIfRequested } from "./help.js";
 import type { CommandContext } from "./context.js";
 
 export async function runLogoutCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr logout [--all] [--no-revoke]")) return;
   const { flags } = parseFlags(args, {
     booleanFlags: ["all", "no-revoke"]
   });

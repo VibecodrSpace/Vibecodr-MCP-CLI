@@ -1,6 +1,7 @@
 import { formatJson, summarizeToolSchema } from "../core/renderers.js";
 import { parseFlags } from "../cli/parse.js";
 import { CliError, EXIT_CODES } from "../cli/errors.js";
+import { showHelpIfRequested } from "./help.js";
 import type { CommandContext } from "./context.js";
 import type { SessionRecord } from "../types/auth.js";
 
@@ -45,6 +46,7 @@ async function loadToolsWithRetry(
 }
 
 export async function runToolsCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr tools [<tool-name>] [--search <text>] [--schema] [--no-login]")) return;
   const { flags, positionals } = parseFlags(args, {
     valueFlags: ["search"],
     booleanFlags: ["schema", "no-login"]

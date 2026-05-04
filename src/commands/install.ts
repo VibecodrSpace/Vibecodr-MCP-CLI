@@ -5,6 +5,7 @@ import { installCodex } from "../clients/codex.js";
 import { installCursor } from "../clients/cursor.js";
 import { installVsCode } from "../clients/vscode.js";
 import { installWindsurf } from "../clients/windsurf.js";
+import { showHelpIfRequested } from "./help.js";
 import type { ClientTarget } from "../types/install.js";
 import type { CommandContext } from "./context.js";
 
@@ -13,6 +14,7 @@ function defaultName(serverUrl: string): string {
 }
 
 export async function runInstallCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr install <codex|cursor|vscode|windsurf> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]")) return;
   const client = args[0] as ClientTarget | undefined;
   if (!client || !["codex", "cursor", "vscode", "windsurf"].includes(client)) {
     throw new CliError("usage.install_client", "Usage: install <codex|cursor|vscode|windsurf> [options]", EXIT_CODES.usage);

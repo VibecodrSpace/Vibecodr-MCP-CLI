@@ -2,9 +2,9 @@
 import { ConfigStore } from "../storage/config-store.js";
 import { SecretStore } from "../storage/secret-store.js";
 import { TokenManager } from "../auth/token-manager.js";
-import { McpRuntimeClient } from "../core/mcp-client.js";
+import { CLIENT_INFO, McpRuntimeClient } from "../core/mcp-client.js";
 import { Output } from "../cli/output.js";
-import { parseGlobalOptions } from "../cli/parse.js";
+import { isHelpToken, isVersionToken, parseGlobalOptions } from "../cli/parse.js";
 import { CliError, EXIT_CODES } from "../cli/errors.js";
 import { runLoginCommand } from "../commands/login.js";
 import { runLogoutCommand } from "../commands/logout.js";
@@ -17,6 +17,7 @@ import { runInstallCommand } from "../commands/install.js";
 import { runUninstallCommand } from "../commands/uninstall.js";
 import { runPulseSetupCommand } from "../commands/pulse-setup.js";
 import { runPulsePublishCommand } from "../commands/pulse-publish.js";
+import { runPulseCommand } from "../commands/pulse.js";
 
 function helpText(): string {
   return [
@@ -35,6 +36,7 @@ function helpText(): string {
     "  config",
     "  pulse-setup [--descriptor-setup-json <json> | --descriptor-setup-file <path>]",
     "  pulse-publish --name <name> (--code <source> | --code-file <path>) --confirm",
+    "  pulse <list|get|status|run|archive|restore|create|deploy>",
     "    Publishes a standalone Pulse with private source/metadata visibility by default.",
     "    The runtime URL is still public HTTP unless the Pulse code rejects callers.",
     "",
@@ -46,10 +48,18 @@ function helpText(): string {
   ].join("\n");
 }
 
+function versionText(): string {
+  return String(CLIENT_INFO.version);
+}
+
 async function main(): Promise<void> {
   const { command, commandArgs, globalOptions } = parseGlobalOptions(process.argv.slice(2));
-  if (!command || command === "--help" || command === "help") {
+  if (!command || isHelpToken(command)) {
     process.stdout.write(helpText() + "\n");
+    return;
+  }
+  if (isVersionToken(command)) {
+    process.stdout.write(versionText() + "\n");
     return;
   }
 
@@ -100,6 +110,9 @@ async function main(): Promise<void> {
       return;
     case "pulse-publish":
       await runPulsePublishCommand(commandArgs, context);
+      return;
+    case "pulse":
+      await runPulseCommand(commandArgs, context);
       return;
     default:
       throw new CliError("usage.command", `Unknown command: ${command}`, EXIT_CODES.usage);

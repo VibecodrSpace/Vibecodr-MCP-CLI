@@ -58,11 +58,13 @@ This always reads the live tool catalog from the MCP server.
 
 Syntax:
 
-`vibecodr call <tool-name> [--input-json <json>] [--input-file <path>] [--stdin] [--interactive] [--no-login]`
+`vibecodr call <tool-name> [--input-json <json>] [--input-file <path>] [--stdin] [--interactive] [--no-login] [--confirm]`
 
 `--interactive` currently supports top-level scalar object fields.
 
 For `quick_publish_creation` with `payload.importMode: "direct_files"`, pass file paths as normal slash-separated project paths such as `src/main.tsx` or `src/server/binding-proof.js`. Do not pre-encode slashes as `%2F`; the hosted MCP gateway encodes each URL segment when it writes files to Vibecodr.
+
+Known mutating tools require explicit confirmation through `--confirm`. The CLI redacts secret, token, source, descriptor, and inline file-content fields from displayed arguments and results; the MCP gateway remains the authority boundary for OAuth, owner checks, confirmation, and output shaping.
 
 ### `pulse-setup`
 
@@ -75,6 +77,31 @@ Calls the live `get_pulse_setup_guidance` MCP tool. Pass a `PulseDescriptorSetup
 The CLI does not maintain separate Pulse setup copy; it reads MCP output derived from the API projection owned by `PulseDescriptor`.
 
 The returned guidance should stay capability-shaped: `env.fetch` is Vibecodr policy-mediated fetch, `env.secrets.bearer/header/query/verifyHmac` are policy-bound secret helpers, `env.webhooks.verify("stripe")` is the first certified provider helper rather than the whole webhook model, non-Stripe signed webhooks use generic HMAC format presets such as `github-sha256`, `shopify-hmac-sha256`, and `slack-v0` until fixture-backed helpers exist, `env.connections.use(provider).fetch` is provider-scoped connected-account access, `env.log` is structured logging, `env.request` is sanitized request access, `env.runtime` is safe correlation metadata, and `env.waitUntil` is best-effort after-response work. The CLI must not introduce separate cleanup, platform-binding, dispatch, raw-token, raw-authorization, or physical-storage guidance.
+
+### `pulse-publish`
+
+Syntax:
+
+`vibecodr pulse-publish --name <name> (--code <source> | --code-file <path>) [--descriptor-json <json> | --descriptor-file <path>] [--slug <slug>] [--visibility public|unlisted|private] --confirm`
+
+Calls `publish_standalone_pulse`. Standalone Pulse source/metadata visibility defaults to private. Private visibility does not add runtime authentication to the public Pulse URL. The CLI does not echo source code or descriptors in successful output.
+
+### `pulse`
+
+Syntax:
+
+- `vibecodr pulse list [--limit <n>] [--offset <n>]`
+- `vibecodr pulse get <pulse-id>`
+- `vibecodr pulse status <pulse-id>`
+- `vibecodr pulse run <pulse-id> [--input-json <json> | --input-file <path>] --confirm`
+- `vibecodr pulse archive <pulse-id> --confirm`
+- `vibecodr pulse restore <pulse-id> --confirm`
+- `vibecodr pulse create --name <name> (--code <source> | --code-file <path>) --confirm`
+- `vibecodr pulse deploy --name <name> (--code <source> | --code-file <path>) --confirm`
+
+`create` and `deploy` are aliases for the standalone publish flow. `run`, `archive`, and `restore` require explicit confirmation. `delete` is intentionally unavailable; archive a Pulse instead. `logs` are not exposed through the hardened lifecycle surface yet.
+
+The CLI forwards lifecycle calls to MCP tools owned by the hosted gateway: `list_pulses`, `get_pulse`, `get_pulse_status`, `run_pulse`, `archive_pulse`, and `restore_pulse`. These server tools are hidden from default discovery but callable by exact name for owner recovery and CLI use.
 
 ### `doctor`
 

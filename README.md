@@ -25,6 +25,8 @@ Currently implemented command surface:
 - `tools`
 - `call`
 - `pulse-setup`
+- `pulse-publish`
+- `pulse`
 - `doctor`
 - `config`
 - `install`
@@ -53,6 +55,8 @@ CLI login authenticates this CLI only. It does not share token storage with Code
 The official production auth path is now committed in package code through the server-hosted client metadata document:
 
 - `https://openai.vibecodr.space/.well-known/oauth-client/vibecodr-mcp.json`
+
+Pulse lifecycle commands use the hosted MCP gateway as the authority boundary. The CLI redacts source, descriptor, token, secret, and inline file-content fields from local output, but the server still enforces OAuth, owner scoping, confirmation, no-delete policy, and model-safe response shaping for direct MCP callers.
 
 Documentation:
 

@@ -3,9 +3,22 @@ import { promptText } from "../platform/prompt.js";
 import { parseFlags } from "../cli/parse.js";
 import { CliError, EXIT_CODES } from "../cli/errors.js";
 import { renderToolResult } from "../core/renderers.js";
+import { redactForOutput } from "../core/redaction.js";
 import { promptObjectBySchema } from "../core/interactive-input.js";
+import { showHelpIfRequested } from "./help.js";
 import type { CommandContext } from "./context.js";
 import type { SessionRecord } from "../types/auth.js";
+
+const CONFIRMED_TOOL_NAMES = new Set([
+  "quick_publish_creation",
+  "publish_standalone_pulse",
+  "publish_draft_capsule",
+  "cancel_import_operation",
+  "update_live_vibe_metadata",
+  "run_pulse",
+  "archive_pulse",
+  "restore_pulse"
+]);
 
 function challengedScope(error: CliError): string | undefined {
   if (!error.debugDetails || typeof error.debugDetails !== "object") return undefined;
@@ -98,9 +111,10 @@ async function listToolsWithRetry(
 }
 
 export async function runCallCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr call <tool-name> [--input-json <json>] [--input-file <path>] [--stdin] [--interactive] [--no-login] [--confirm]")) return;
   const { flags, positionals } = parseFlags(args, {
     valueFlags: ["input-json", "input-file"],
-    booleanFlags: ["stdin", "interactive", "no-login"]
+    booleanFlags: ["stdin", "interactive", "no-login", "confirm"]
   });
   const toolName = positionals[0];
   if (!toolName) {
@@ -122,15 +136,25 @@ export async function runCallCommand(args: string[], context: CommandContext): P
     }
     input = await promptObjectBySchema(promptText, toolName, tool.inputSchema as Record<string, unknown> | undefined);
   }
+  if (CONFIRMED_TOOL_NAMES.has(toolName) && flags["confirm"] !== true) {
+    throw new CliError(
+      "usage.confirmation_required",
+      `Calling ${toolName} requires explicit confirmation. Re-run with --confirm after the user confirms.`,
+      EXIT_CODES.usage
+    );
+  }
+  if (CONFIRMED_TOOL_NAMES.has(toolName)) {
+    input = { ...input, confirmed: true };
+  }
 
   const { result } = await callToolWithRetry(context, toolName, input, !flags["no-login"]);
   context.output.success(
     {
       schemaVersion: 1,
       tool: toolName,
-      arguments: input,
-      result
+      arguments: redactForOutput(input),
+      result: redactForOutput(result)
     },
-    [renderToolResult(result)]
+    [renderToolResult(redactForOutput(result))]
   );
 }

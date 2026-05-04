@@ -1,8 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - rename the npm package to `@vibecodr/cli` while keeping `vibecodr` as the primary executable and `vibecodr-mcp` as a compatibility alias
+- add the hardened `pulse` lifecycle command group for list/get/status/run/archive/restore plus create/deploy aliases
+- redact source, descriptor, token, secret, and inline file-content fields from CLI-displayed MCP arguments and results
+- require explicit confirmation for known mutating MCP tools when invoked through the generic `call` command
 
 ## 0.1.8
 

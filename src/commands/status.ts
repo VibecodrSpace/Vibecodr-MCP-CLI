@@ -1,5 +1,6 @@
 import { access } from "node:fs/promises";
 import { parseFlags } from "../cli/parse.js";
+import { showHelpIfRequested } from "./help.js";
 import { InstallManifestStore } from "../storage/install-manifest.js";
 import type { InstallManifestEntry } from "../types/install.js";
 import type { CommandContext } from "./context.js";
@@ -30,6 +31,7 @@ async function inspectInstall(entry: InstallManifestEntry): Promise<InstallStatu
 }
 
 export async function runStatusCommand(args: string[], context: CommandContext): Promise<void> {
+  if (showHelpIfRequested(args, context, "Usage: vibecodr status [--probe] [--show-installs]")) return;
   const { flags } = parseFlags(args, {
     booleanFlags: ["probe", "show-installs"]
   });
