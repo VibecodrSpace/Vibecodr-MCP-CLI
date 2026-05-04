@@ -150,7 +150,7 @@ test("call command redacts known secret-bearing arguments in json output", async
     token: "tok_live_secret",
     Authorization: "Bearer private",
     nested: {
-      OPENAI_API_KEY: "sk-private",
+      PROVIDER_SECRET_KEY: "sk-private",
       harmless: "kept"
     }
   };
@@ -189,7 +189,7 @@ test("call command redacts known secret-bearing arguments in json output", async
   const parsed = JSON.parse(writes.join(""));
   assert.equal(parsed.arguments.token, "[redacted]");
   assert.equal(parsed.arguments.Authorization, "[redacted]");
-  assert.equal(parsed.arguments.nested.OPENAI_API_KEY, "[redacted]");
+  assert.equal(parsed.arguments.nested.PROVIDER_SECRET_KEY, "[redacted]");
   assert.equal(parsed.arguments.nested.harmless, "kept");
   assert.doesNotMatch(JSON.stringify(parsed), /tok_live_secret|Bearer private|sk-private/);
 });
