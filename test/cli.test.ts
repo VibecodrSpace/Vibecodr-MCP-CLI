@@ -1,9 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { parseGlobalOptions } from "../src/cli/parse.js";
 import { summarizeToolSchema, renderToolResult } from "../src/core/renderers.js";
 import { OFFICIAL_CLIENT_METADATA_URL, OFFICIAL_SERVER_URL, officialClientInformation } from "../src/auth/official-client.js";
 import { runCallCommand } from "../src/commands/call.js";
+import { runUploadCommand } from "../src/commands/upload.js";
 import { runLoginCommand } from "../src/commands/login.js";
 import { runPulseSetupCommand } from "../src/commands/pulse-setup.js";
 import { runPulsePublishCommand } from "../src/commands/pulse-publish.js";
@@ -243,6 +247,435 @@ test("call command redacts known secret-bearing tool results in json output", as
   assert.equal(parsed.result.structuredContent.safe, "kept");
   assert.equal(parsed.result.content, "[redacted]");
   assert.doesNotMatch(JSON.stringify(parsed), /tok_private|export default/);
+});
+
+test("upload command stages a ZIP through direct PUT and prints only safe identifiers", async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), "vibecodr-upload-"));
+  const zipPath = join(tmpDir, "project.zip");
+  const zipBytes = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00]);
+  await writeFile(zipPath, zipBytes);
+
+  const writes: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  const originalFetch = globalThis.fetch;
+  const toolCalls: Array<{ name: string; input: Record<string, unknown> }> = [];
+  const presignedUrl = "https://r2.example/project.zip?X-Amz-Signature=secret-signature";
+  process.stdout.write = ((chunk: string | Uint8Array) => {
+    writes.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    assert.equal(String(input), presignedUrl);
+    assert.equal(init?.method, "PUT");
+    assert.deepEqual(init?.headers, { "Content-Type": "application/zip" });
+    assert.ok(init?.body instanceof Blob);
+    assert.deepEqual(Buffer.from(await init.body.arrayBuffer()), zipBytes);
+    return new Response(null, { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    await runUploadCommand(["--zip", zipPath, "--root-hint", "app", "--entry-hint", "src/main.tsx"], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {
+        resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+        getSession: async () => ({ accessToken: "token-1" })
+      } as never,
+      runtimeClient: {
+        callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string, input: Record<string, unknown>) => {
+          toolCalls.push({ name, input });
+          if (name === "create_staged_upload") {
+            assert.equal(input["kind"], "source_zip");
+            assert.equal(input["fileName"], "project.zip");
+            assert.equal(input["contentType"], "application/zip");
+            assert.equal(input["sizeBytes"], zipBytes.byteLength);
+            assert.match(String(input["sha256"]), /^[a-f0-9]{64}$/);
+            return {
+              structuredContent: {
+                uploadId: "upload_123",
+                kind: "source_zip",
+                status: "created",
+                fileName: "project.zip",
+                contentType: "application/zip",
+                sizeBytes: zipBytes.byteLength
+              },
+              _meta: {
+                stagedUploadDirectPut: {
+                  presignedUrl,
+                  headers: { "Content-Type": "application/zip" }
+                }
+              }
+            };
+          }
+          if (name === "complete_staged_upload") {
+            assert.deepEqual(input, {
+              uploadId: "upload_123",
+              sizeBytes: zipBytes.byteLength,
+              sha256: toolCalls[0]?.input["sha256"]
+            });
+            return {
+              structuredContent: {
+                uploadId: "upload_123",
+                status: "verified",
+                sha256: input["sha256"]
+              }
+            };
+          }
+          throw new Error(`Unexpected tool call: ${name}`);
+        }
+      } as never
+    });
+  } finally {
+    process.stdout.write = originalWrite;
+    globalThis.fetch = originalFetch;
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+
+  assert.deepEqual(toolCalls.map((call) => call.name), [
+    "create_staged_upload",
+    "complete_staged_upload"
+  ]);
+  const parsed = JSON.parse(writes.join(""));
+  assert.equal(parsed.upload.uploadId, "upload_123");
+  assert.equal(parsed.quickPublishPayload.importMode, "staged_upload");
+  assert.equal(parsed.quickPublishPayload.stagedUpload.uploadId, "upload_123");
+  assert.equal(parsed.quickPublishPayload.stagedUpload.rootHint, "app");
+  assert.equal(parsed.quickPublishPayload.stagedUpload.entryHint, "src/main.tsx");
+  assert.doesNotMatch(JSON.stringify(parsed), /X-Amz-Signature|secret-signature|r2\.example/);
+});
+
+test("upload command stages a cover image and prints a thumbnailStagedUpload payload", async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), "vibecodr-upload-"));
+  const imagePath = join(tmpDir, "cover.png");
+  const imageBytes = Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    0x00, 0x00, 0x00, 0x0d
+  ]);
+  await writeFile(imagePath, imageBytes);
+
+  const writes: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  const originalFetch = globalThis.fetch;
+  const toolCalls: Array<{ name: string; input: Record<string, unknown> }> = [];
+  const presignedUrl = "https://r2.example/cover.png?X-Amz-Signature=secret-signature";
+  process.stdout.write = ((chunk: string | Uint8Array) => {
+    writes.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    assert.equal(String(input), presignedUrl);
+    assert.equal(init?.method, "PUT");
+    assert.deepEqual(init?.headers, { "Content-Type": "image/png" });
+    assert.ok(init?.body instanceof Blob);
+    assert.deepEqual(Buffer.from(await init.body.arrayBuffer()), imageBytes);
+    return new Response(null, { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    await runUploadCommand(["--image", imagePath], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {
+        resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+        getSession: async () => ({ accessToken: "token-1" })
+      } as never,
+      runtimeClient: {
+        callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string, input: Record<string, unknown>) => {
+          toolCalls.push({ name, input });
+          if (name === "create_staged_upload") {
+            assert.equal(input["kind"], "cover_image");
+            assert.equal(input["fileName"], "cover.png");
+            assert.equal(input["contentType"], "image/png");
+            assert.equal(input["sizeBytes"], imageBytes.byteLength);
+            return {
+              structuredContent: {
+                uploadId: "upload_cover_123",
+                kind: "cover_image",
+                status: "created",
+                fileName: "cover.png",
+                contentType: "image/png",
+                sizeBytes: imageBytes.byteLength
+              },
+              _meta: {
+                stagedUploadDirectPut: {
+                  presignedUrl,
+                  headers: { "Content-Type": "image/png" }
+                }
+              }
+            };
+          }
+          if (name === "complete_staged_upload") {
+            return {
+              structuredContent: {
+                uploadId: "upload_cover_123",
+                status: "verified",
+                sha256: input["sha256"]
+              }
+            };
+          }
+          throw new Error(`Unexpected tool call: ${name}`);
+        }
+      } as never
+    });
+  } finally {
+    process.stdout.write = originalWrite;
+    globalThis.fetch = originalFetch;
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+
+  assert.deepEqual(toolCalls.map((call) => call.name), [
+    "create_staged_upload",
+    "complete_staged_upload"
+  ]);
+  const parsed = JSON.parse(writes.join(""));
+  assert.equal(parsed.upload.uploadId, "upload_cover_123");
+  assert.equal(parsed.upload.kind, "cover_image");
+  assert.equal(parsed.quickPublishPayload.thumbnailStagedUpload.uploadId, "upload_cover_123");
+  assert.doesNotMatch(JSON.stringify(parsed), /X-Amz-Signature|secret-signature|r2\.example/);
+});
+
+test("upload command rejects GIF cover images before creating a staged session", async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), "vibecodr-upload-"));
+  const imagePath = join(tmpDir, "cover.gif");
+  await writeFile(imagePath, Buffer.from("GIF89a"));
+  const toolNames: string[] = [];
+
+  try {
+    await assert.rejects(
+      async () => runUploadCommand(["--image", imagePath], {
+        globalOptions: {
+          profile: "default",
+          json: true,
+          verbose: false,
+          nonInteractive: true
+        },
+        output: new Output({
+          profile: "default",
+          json: true,
+          verbose: false,
+          nonInteractive: true
+        }),
+        configStore: {} as never,
+        secretStore: {} as never,
+        tokenManager: {
+          resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+          getSession: async () => ({ accessToken: "token-1" })
+        } as never,
+        runtimeClient: {
+          callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string) => {
+            toolNames.push(name);
+            throw new Error(`Unexpected tool call: ${name}`);
+          }
+        } as never
+      }),
+      (error) => {
+        assert.ok(error instanceof CliError);
+        assert.equal(error.machineCode, "usage.upload_content_type_invalid");
+        assert.match(error.message, /Cover images must use image\/png, image\/jpeg, image\/webp, or image\/avif/);
+        return true;
+      }
+    );
+  } finally {
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+
+  assert.deepEqual(toolNames, []);
+});
+
+test("upload command allows GIF on the avatar image lane", async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), "vibecodr-upload-"));
+  const imagePath = join(tmpDir, "avatar.gif");
+  const imageBytes = Buffer.from("GIF89a");
+  await writeFile(imagePath, imageBytes);
+
+  const writes: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  const originalFetch = globalThis.fetch;
+  const toolCalls: Array<{ name: string; input: Record<string, unknown> }> = [];
+  const presignedUrl = "https://r2.example/avatar.gif?X-Amz-Signature=secret-signature";
+  process.stdout.write = ((chunk: string | Uint8Array) => {
+    writes.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    assert.equal(String(input), presignedUrl);
+    assert.equal(init?.method, "PUT");
+    assert.deepEqual(init?.headers, { "Content-Type": "image/gif" });
+    assert.ok(init?.body instanceof Blob);
+    assert.deepEqual(Buffer.from(await init.body.arrayBuffer()), imageBytes);
+    return new Response(null, { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    await runUploadCommand(["--image", imagePath, "--kind", "avatar_image"], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {
+        resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+        getSession: async () => ({ accessToken: "token-1" })
+      } as never,
+      runtimeClient: {
+        callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string, input: Record<string, unknown>) => {
+          toolCalls.push({ name, input });
+          if (name === "create_staged_upload") {
+            assert.equal(input["kind"], "avatar_image");
+            assert.equal(input["fileName"], "avatar.gif");
+            assert.equal(input["contentType"], "image/gif");
+            assert.equal(input["sizeBytes"], imageBytes.byteLength);
+            return {
+              structuredContent: {
+                uploadId: "upload_avatar_123",
+                kind: "avatar_image",
+                status: "created",
+                fileName: "avatar.gif",
+                contentType: "image/gif",
+                sizeBytes: imageBytes.byteLength
+              },
+              _meta: {
+                stagedUploadDirectPut: {
+                  presignedUrl,
+                  headers: { "Content-Type": "image/gif" }
+                }
+              }
+            };
+          }
+          if (name === "complete_staged_upload") {
+            return {
+              structuredContent: {
+                uploadId: "upload_avatar_123",
+                status: "verified",
+                sha256: input["sha256"]
+              }
+            };
+          }
+          throw new Error(`Unexpected tool call: ${name}`);
+        }
+      } as never
+    });
+  } finally {
+    process.stdout.write = originalWrite;
+    globalThis.fetch = originalFetch;
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+
+  assert.deepEqual(toolCalls.map((call) => call.name), [
+    "create_staged_upload",
+    "complete_staged_upload"
+  ]);
+  const parsed = JSON.parse(writes.join(""));
+  assert.equal(parsed.upload.uploadId, "upload_avatar_123");
+  assert.equal(parsed.upload.kind, "avatar_image");
+  assert.equal(parsed.quickPublishPayload.avatarStagedUpload.uploadId, "upload_avatar_123");
+  assert.doesNotMatch(JSON.stringify(parsed), /X-Amz-Signature|secret-signature|r2\.example/);
+});
+
+test("upload command aborts the staged session when direct PUT fails", async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), "vibecodr-upload-"));
+  const zipPath = join(tmpDir, "project.zip");
+  const zipBytes = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+  await writeFile(zipPath, zipBytes);
+
+  const originalFetch = globalThis.fetch;
+  const toolNames: string[] = [];
+  globalThis.fetch = (async () => new Response("failed", { status: 500 })) as typeof fetch;
+
+  try {
+    await assert.rejects(
+      async () => runUploadCommand(["--zip", zipPath], {
+        globalOptions: {
+          profile: "default",
+          json: true,
+          verbose: false,
+          nonInteractive: true
+        },
+        output: new Output({
+          profile: "default",
+          json: true,
+          verbose: false,
+          nonInteractive: true
+        }),
+        configStore: {} as never,
+        secretStore: {} as never,
+        tokenManager: {
+          resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+          getSession: async () => ({ accessToken: "token-1" })
+        } as never,
+        runtimeClient: {
+          callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string) => {
+            toolNames.push(name);
+            if (name === "create_staged_upload") {
+              return {
+                structuredContent: {
+                  uploadId: "upload_failed",
+                  kind: "source_zip",
+                  status: "created",
+                  fileName: "project.zip",
+                  contentType: "application/zip",
+                  sizeBytes: zipBytes.byteLength
+                },
+                _meta: {
+                  stagedUploadDirectPut: {
+                    presignedUrl: "https://r2.example/project.zip?X-Amz-Signature=secret-signature",
+                    headers: { "Content-Type": "application/zip" }
+                  }
+                }
+              };
+            }
+            if (name === "abort_staged_upload") {
+              return { structuredContent: { uploadId: "upload_failed", status: "aborted" } };
+            }
+            throw new Error(`Unexpected tool call: ${name}`);
+          }
+        } as never
+      }),
+      (error) => {
+        assert.ok(error instanceof CliError);
+        assert.equal(error.machineCode, "upload.put_failed");
+        return true;
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+
+  assert.deepEqual(toolNames, ["create_staged_upload", "abort_staged_upload"]);
 });
 
 test("call command requires explicit confirmation for known mutating tools", async () => {

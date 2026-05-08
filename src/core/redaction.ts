@@ -13,6 +13,8 @@ const SENSITIVE_KEY_PATTERNS = [
   /^private[-_]?key$/i,
   /^refresh[-_]?token$/i,
   /^access[-_]?token$/i,
+  /^presigned[-_]?url$/i,
+  /^signature$/i,
   /^fileBase64$/i,
   /^code$/i,
   /^content$/i,
@@ -21,6 +23,7 @@ const SENSITIVE_KEY_PATTERNS = [
 
 const SENSITIVE_STRING_PATTERNS = [
   /\bBearer\s+[A-Za-z0-9._~+/=-]+/i,
+  /[?&]X-Amz-Signature=[^&\s]+/i,
   /\btok_[A-Za-z0-9._-]+/i,
   /\bsk-[A-Za-z0-9._-]+/i,
   /\b(token|secret|api[-_ ]?key)\s*[:=]\s*\S+/i

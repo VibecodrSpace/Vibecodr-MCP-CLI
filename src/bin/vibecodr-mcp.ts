@@ -18,6 +18,7 @@ import { runUninstallCommand } from "../commands/uninstall.js";
 import { runPulseSetupCommand } from "../commands/pulse-setup.js";
 import { runPulsePublishCommand } from "../commands/pulse-publish.js";
 import { runPulseCommand } from "../commands/pulse.js";
+import { runUploadCommand } from "../commands/upload.js";
 
 function helpText(): string {
   return [
@@ -30,6 +31,8 @@ function helpText(): string {
     "  status",
     "  tools [tool-name]",
     "  call <tool-name>",
+    "  upload --zip <path>",
+    "  upload --image <path> [--kind cover_image|avatar_image]",
     "  doctor",
     "  install <client>",
     "  uninstall <client>",
@@ -92,6 +95,9 @@ async function main(): Promise<void> {
       return;
     case "call":
       await runCallCommand(commandArgs, context);
+      return;
+    case "upload":
+      await runUploadCommand(commandArgs, context);
       return;
     case "doctor":
       await runDoctorCommand(commandArgs, context);

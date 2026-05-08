@@ -14,6 +14,7 @@ The CLI is the permissively licensed public client surface for:
 - direct CLI OAuth login
 - live MCP tool discovery
 - live MCP tool invocation
+- direct-to-R2 staged ZIP and image uploads without base64 payloads
 - environment and auth diagnostics
 - thin client install and uninstall adapters
 
@@ -24,6 +25,7 @@ Currently implemented command surface:
 - `status`
 - `tools`
 - `call`
+- `upload`
 - `pulse-setup`
 - `pulse-publish`
 - `pulse`
