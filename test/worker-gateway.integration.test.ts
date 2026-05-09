@@ -197,6 +197,7 @@ async function createVibecodrApiServer(): Promise<ServerState> {
             pulses: {
               maxActions: 3,
               maxRunsPerMonth: 1000,
+              maxComputeMsPerMonth: 200000000,
               maxRuntimeMs: 30000,
               maxPrivatePulses: 5,
               maxSubrequests: 20,

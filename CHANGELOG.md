@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4
+
+- clarify staged ZIP upload output so larger projects can move into Vibecodr's async heavy import lane automatically
+- keep worker-gateway integration fixtures aligned with pulse compute quota fields
+
 ## 0.2.2
 
 - show command-specific help for nested `vibecodr pulse <command> --help|-h|-help` requests

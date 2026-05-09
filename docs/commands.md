@@ -76,7 +76,7 @@ Syntax:
 
 Stages a local ZIP or image through Vibecodr's API-owned upload session flow. The CLI asks the MCP gateway for a short-lived direct R2 PUT URL, uploads the bytes directly to R2, completes server-side verification, and prints safe identifiers only.
 
-ZIP uploads print a `quickPublishPayload` snippet using `payload.importMode: "staged_upload"`. Cover image uploads print a `thumbnailStagedUpload` snippet that can be passed to publish metadata tools. Avatar image uploads print an `avatarStagedUpload` identifier for avatar promotion flows.
+ZIP uploads print a `quickPublishPayload` snippet using `payload.importMode: "staged_upload"`. The snippet asks Vibecodr to use the async staged-upload import path so larger projects can move to the heavy import lane automatically instead of making the CLI guess. Cover image uploads print a `thumbnailStagedUpload` snippet that can be passed to publish metadata tools. Avatar image uploads print an `avatarStagedUpload` identifier for avatar promotion flows.
 
 Cover images support PNG, JPEG, WebP, and AVIF. Avatar images support PNG, JPEG, WebP, and GIF.
 

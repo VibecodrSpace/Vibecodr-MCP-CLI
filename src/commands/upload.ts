@@ -344,7 +344,7 @@ export async function runUploadCommand(args: string[], context: CommandContext):
       [
         `Uploaded and verified ${created.fileName}.`,
         input.kind === "source_zip"
-          ? `Use uploadId ${completed.uploadId} with payload.importMode="staged_upload".`
+          ? `Use uploadId ${completed.uploadId} with payload.importMode="staged_upload"; larger projects will move to Vibecodr's heavy import lane automatically.`
           : input.kind === "cover_image"
             ? `Use uploadId ${completed.uploadId} with thumbnailStagedUpload.uploadId.`
             : `Use uploadId ${completed.uploadId} with an avatar image promotion flow.`,
