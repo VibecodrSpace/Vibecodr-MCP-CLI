@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.6
+
+- publish a fresh CLI version so GitHub and npm carry the same current release marker
+
 ## 0.2.5
 
 - refresh release lockfile coverage before publishing the CLI
