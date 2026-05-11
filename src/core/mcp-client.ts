@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { extractWWWAuthenticateParams } from "@modelcontextprotocol/sdk/client/auth.js";
 import { StreamableHTTPClientTransport, StreamableHTTPError } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { CliError, EXIT_CODES } from "../cli/errors.js";
 
 const require = createRequire(import.meta.url);
@@ -25,6 +26,18 @@ type CapturedAuthChallenge = {
   resourceMetadataUrl?: string | undefined;
 };
 
+export function resolveToolRequestTimeoutMs(args: Record<string, unknown>): number | undefined {
+  const raw = args["timeoutSeconds"];
+  if (raw === undefined) return undefined;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) return undefined;
+  const timeoutSeconds = Math.min(Math.max(Math.floor(raw), 5), 600);
+  return timeoutSeconds * 1000 + 15_000;
+}
+
+function isMcpRequestTimeout(error: unknown): boolean {
+  return error instanceof McpError && error.code === ErrorCode.RequestTimeout;
+}
+
 export class McpRuntimeClient {
   async listTools(serverUrl: string, accessToken?: string): Promise<ListedTool[]> {
     return await this.withClient(serverUrl, accessToken, async (client) => {
@@ -35,10 +48,11 @@ export class McpRuntimeClient {
 
   async callTool(serverUrl: string, accessToken: string | undefined, name: string, args: Record<string, unknown>): Promise<CalledToolResult> {
     return await this.withClient(serverUrl, accessToken, async (client) => {
+      const timeout = resolveToolRequestTimeoutMs(args);
       return await client.callTool({
         name,
         arguments: args
-      });
+      }, undefined, timeout === undefined ? undefined : { timeout });
     });
   }
 
@@ -89,6 +103,19 @@ export class McpRuntimeClient {
           }
         );
       }
+      if (isMcpRequestTimeout(error)) {
+        throw new CliError(
+          "mcp.request_timeout",
+          "The MCP request timed out before Vibecodr finished the operation.",
+          EXIT_CODES.protocol,
+          {
+            cause: error,
+            debugDetails: { code: ErrorCode.RequestTimeout },
+            nextStep: "If this was an import or publish, run vibecodr call resume_latest_publish_flow --json to pick up the operation without restarting."
+          }
+        );
+      }
+
       throw new CliError("mcp.protocol", "Failed to complete the MCP request.", EXIT_CODES.protocol, {
         cause: error,
         nextStep: "Run vibecodr doctor to inspect auth, discovery, and connectivity."

@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseGlobalOptions } from "../src/cli/parse.js";
 import { summarizeToolSchema, renderToolResult } from "../src/core/renderers.js";
+import { resolveToolRequestTimeoutMs } from "../src/core/mcp-client.js";
 import { OFFICIAL_CLIENT_METADATA_URL, OFFICIAL_SERVER_URL, officialClientInformation } from "../src/auth/official-client.js";
 import { runCallCommand } from "../src/commands/call.js";
 import { runUploadCommand } from "../src/commands/upload.js";
@@ -76,6 +77,14 @@ test("renderToolResult prefers text content when present", () => {
     }
   });
   assert.equal(rendered, "Hello from a tool.");
+});
+
+test("MCP runtime client honors bounded tool timeout arguments", () => {
+  assert.equal(resolveToolRequestTimeoutMs({}), undefined);
+  assert.equal(resolveToolRequestTimeoutMs({ timeoutSeconds: 1 }), 20_000);
+  assert.equal(resolveToolRequestTimeoutMs({ timeoutSeconds: 45 }), 60_000);
+  assert.equal(resolveToolRequestTimeoutMs({ timeoutSeconds: 600 }), 615_000);
+  assert.equal(resolveToolRequestTimeoutMs({ timeoutSeconds: "600" }), undefined);
 });
 
 test("call command forwards nested direct_files paths without pre-encoding them and redacts output arguments", async () => {
