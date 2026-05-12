@@ -8,6 +8,7 @@ import { promptObjectBySchema } from "../core/interactive-input.js";
 import { showHelpIfRequested } from "./help.js";
 import type { CommandContext } from "./context.js";
 import type { SessionRecord } from "../types/auth.js";
+import type { CallToolOptions } from "../core/mcp-client.js";
 
 const CONFIRMED_TOOL_NAMES = new Set([
   "quick_publish_creation",
@@ -52,13 +53,14 @@ export async function callToolWithRetry(
   context: CommandContext,
   toolName: string,
   input: Record<string, unknown>,
-  allowLogin: boolean
+  allowLogin: boolean,
+  options?: CallToolOptions
 ): Promise<{ result: Awaited<ReturnType<CommandContext["runtimeClient"]["callTool"]>>; session?: SessionRecord }> {
   const { profileName, serverUrl } = await context.tokenManager.resolveProfile(context.globalOptions);
   const existingSession = await context.tokenManager.getSession(profileName, serverUrl);
   try {
     return {
-      result: await context.runtimeClient.callTool(serverUrl, existingSession?.accessToken, toolName, input),
+      result: await context.runtimeClient.callTool(serverUrl, existingSession?.accessToken, toolName, input, options),
       ...(existingSession ? { session: existingSession } : {})
     };
   } catch (error) {
@@ -66,7 +68,7 @@ export async function callToolWithRetry(
     if (error.machineCode === "auth.required" && existingSession?.refreshToken) {
       const refreshed = await context.tokenManager.refresh(profileName, existingSession);
       return {
-        result: await context.runtimeClient.callTool(serverUrl, refreshed.session.accessToken, toolName, input),
+        result: await context.runtimeClient.callTool(serverUrl, refreshed.session.accessToken, toolName, input, options),
         session: refreshed.session
       };
     }
@@ -77,7 +79,7 @@ export async function callToolWithRetry(
       });
       const nextSession = await context.tokenManager.getSession(profileName, serverUrl);
       return {
-        result: await context.runtimeClient.callTool(serverUrl, nextSession?.accessToken, toolName, input),
+        result: await context.runtimeClient.callTool(serverUrl, nextSession?.accessToken, toolName, input, options),
         ...(nextSession ? { session: nextSession } : {})
       };
     }

@@ -85,6 +85,7 @@ test("MCP runtime client honors bounded tool timeout arguments", () => {
   assert.equal(resolveToolRequestTimeoutMs({ timeoutSeconds: 45 }), 60_000);
   assert.equal(resolveToolRequestTimeoutMs({ timeoutSeconds: 600 }), 615_000);
   assert.equal(resolveToolRequestTimeoutMs({ timeoutSeconds: "600" }), undefined);
+  assert.equal(resolveToolRequestTimeoutMs({ timeoutSeconds: 5 }, { timeoutSeconds: 120 }), 135_000);
 });
 
 test("call command forwards nested direct_files paths without pre-encoding them and redacts output arguments", async () => {
@@ -333,7 +334,7 @@ test("upload command stages a ZIP through direct PUT and prints only safe identi
   const writes: string[] = [];
   const originalWrite = process.stdout.write.bind(process.stdout);
   const originalFetch = globalThis.fetch;
-  const toolCalls: Array<{ name: string; input: Record<string, unknown> }> = [];
+  const toolCalls: Array<{ name: string; input: Record<string, unknown>; options?: { timeoutSeconds?: number } }> = [];
   const presignedUrl = "https://r2.example/project.zip?X-Amz-Signature=secret-signature";
   process.stdout.write = ((chunk: string | Uint8Array) => {
     writes.push(String(chunk));
@@ -369,13 +370,14 @@ test("upload command stages a ZIP through direct PUT and prints only safe identi
         getSession: async () => ({ accessToken: "token-1" })
       } as never,
       runtimeClient: {
-        callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string, input: Record<string, unknown>) => {
-          toolCalls.push({ name, input });
+        callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string, input: Record<string, unknown>, options?: { timeoutSeconds?: number }) => {
+          toolCalls.push({ name, input, ...(options ? { options } : {}) });
           if (name === "create_staged_upload") {
             assert.equal(input["kind"], "source_zip");
             assert.equal(input["fileName"], "project.zip");
             assert.equal(input["contentType"], "application/zip");
             assert.equal(input["sizeBytes"], zipBytes.byteLength);
+            assert.equal(Object.hasOwn(input, "timeoutSeconds"), false);
             assert.match(String(input["sha256"]), /^[a-f0-9]{64}$/);
             return {
               structuredContent: {
@@ -395,6 +397,7 @@ test("upload command stages a ZIP through direct PUT and prints only safe identi
             };
           }
           if (name === "complete_staged_upload") {
+            assert.equal(Object.hasOwn(input, "timeoutSeconds"), false);
             assert.deepEqual(input, {
               uploadId: "upload_123",
               sizeBytes: zipBytes.byteLength,
@@ -421,6 +424,10 @@ test("upload command stages a ZIP through direct PUT and prints only safe identi
   assert.deepEqual(toolCalls.map((call) => call.name), [
     "create_staged_upload",
     "complete_staged_upload"
+  ]);
+  assert.deepEqual(toolCalls.map((call) => call.options), [
+    { timeoutSeconds: 600 },
+    { timeoutSeconds: 600 }
   ]);
   const parsed = JSON.parse(writes.join(""));
   assert.equal(parsed.upload.uploadId, "upload_123");

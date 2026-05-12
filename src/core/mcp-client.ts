@@ -19,6 +19,10 @@ export const CLIENT_INFO = {
 export type ListedTool = Awaited<ReturnType<Client["listTools"]>>["tools"][number];
 export type CalledToolResult = Awaited<ReturnType<Client["callTool"]>>;
 
+export type CallToolOptions = {
+  timeoutSeconds?: number | undefined;
+};
+
 type CapturedAuthChallenge = {
   status: number;
   scope?: string | undefined;
@@ -26,8 +30,8 @@ type CapturedAuthChallenge = {
   resourceMetadataUrl?: string | undefined;
 };
 
-export function resolveToolRequestTimeoutMs(args: Record<string, unknown>): number | undefined {
-  const raw = args["timeoutSeconds"];
+export function resolveToolRequestTimeoutMs(args: Record<string, unknown>, options?: CallToolOptions): number | undefined {
+  const raw = options?.timeoutSeconds ?? args["timeoutSeconds"];
   if (raw === undefined) return undefined;
   if (typeof raw !== "number" || !Number.isFinite(raw)) return undefined;
   const timeoutSeconds = Math.min(Math.max(Math.floor(raw), 5), 600);
@@ -46,9 +50,15 @@ export class McpRuntimeClient {
     });
   }
 
-  async callTool(serverUrl: string, accessToken: string | undefined, name: string, args: Record<string, unknown>): Promise<CalledToolResult> {
+  async callTool(
+    serverUrl: string,
+    accessToken: string | undefined,
+    name: string,
+    args: Record<string, unknown>,
+    options?: CallToolOptions
+  ): Promise<CalledToolResult> {
     return await this.withClient(serverUrl, accessToken, async (client) => {
-      const timeout = resolveToolRequestTimeoutMs(args);
+      const timeout = resolveToolRequestTimeoutMs(args, options);
       return await client.callTool({
         name,
         arguments: args

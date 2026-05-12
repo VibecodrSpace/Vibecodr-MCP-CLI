@@ -70,15 +70,17 @@ Known mutating tools require explicit confirmation through `--confirm`. The CLI 
 
 Syntax:
 
-`vibecodr upload --zip <path> [--idempotency-key <key>] [--root-hint <path>] [--entry-hint <path>] [--no-login]`
+`vibecodr upload --zip <path> [--idempotency-key <key>] [--root-hint <path>] [--entry-hint <path>] [--timeout-sec <n>] [--no-login]`
 
-`vibecodr upload --image <path> [--kind cover_image|avatar_image] [--content-type <mime>] [--no-login]`
+`vibecodr upload --image <path> [--kind cover_image|avatar_image] [--content-type <mime>] [--timeout-sec <n>] [--no-login]`
 
 Stages a local ZIP or image through Vibecodr's API-owned upload session flow. The CLI asks the MCP gateway for a short-lived direct R2 PUT URL, uploads the bytes directly to R2, completes server-side verification, and prints safe identifiers only.
 
 ZIP uploads print a `quickPublishPayload` snippet using `payload.importMode: "staged_upload"`. The snippet asks Vibecodr to use the async staged-upload import path so larger projects can move to the heavy import lane automatically instead of making the CLI guess. Cover image uploads print a `thumbnailStagedUpload` snippet that can be passed to publish metadata tools. Avatar image uploads print an `avatarStagedUpload` identifier for avatar promotion flows.
 
 Cover images support PNG, JPEG, WebP, and AVIF. Avatar images support PNG, JPEG, WebP, and GIF.
+
+Staged upload MCP setup and completion calls use a longer client-side wait by default so large ZIP verification does not fail only because the local CLI stopped waiting. Use `--timeout-sec <n>` only when a slower network needs a different local wait; this value is transport behavior and is not forwarded as a server tool argument.
 
 The presigned URL is a bearer credential and is never printed in command output. Legacy `zip_import` / `fileBase64` remains a compatibility path for small payloads, not the preferred CLI path for whole repos or launch images.
 

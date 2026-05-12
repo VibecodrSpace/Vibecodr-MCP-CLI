@@ -12,6 +12,7 @@ const CREATE_STAGED_UPLOAD_TOOL_NAME = "create_staged_upload";
 const COMPLETE_STAGED_UPLOAD_TOOL_NAME = "complete_staged_upload";
 const ABORT_STAGED_UPLOAD_TOOL_NAME = "abort_staged_upload";
 const SOURCE_ZIP_CONTENT_TYPE = "application/zip";
+const DEFAULT_STAGED_UPLOAD_TIMEOUT_SECONDS = 600;
 const SOURCE_ZIP_CONTENT_TYPES = new Set(["application/zip", "application/x-zip-compressed"]);
 const COVER_IMAGE_CONTENT_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/avif"]);
 const AVATAR_IMAGE_CONTENT_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
@@ -116,10 +117,11 @@ function parseUploadArgs(args: string[]): {
   idempotencyKey?: string;
   rootHint?: string;
   entryHint?: string;
+  timeoutSeconds: number;
   allowLogin: boolean;
 } {
   const { flags, positionals } = parseFlags(args, {
-    valueFlags: ["zip", "image", "file", "kind", "content-type", "idempotency-key", "root-hint", "entry-hint"],
+    valueFlags: ["zip", "image", "file", "kind", "content-type", "idempotency-key", "root-hint", "entry-hint", "timeout-sec"],
     booleanFlags: ["no-login"]
   });
   const zipPath = readString(flags["zip"]);
@@ -142,6 +144,7 @@ function parseUploadArgs(args: string[]): {
   const rootHint = readString(flags["root-hint"]);
   const entryHint = readString(flags["entry-hint"]);
   const contentType = readString(flags["content-type"]);
+  const timeoutSeconds = parseUploadTimeoutSeconds(flags["timeout-sec"]);
   const rawKind = readString(flags["kind"]);
   let kind: UploadKind = imagePath ? "cover_image" : "source_zip";
   if (rawKind) {
@@ -168,8 +171,21 @@ function parseUploadArgs(args: string[]): {
     ...(idempotencyKey ? { idempotencyKey } : {}),
     ...(rootHint ? { rootHint } : {}),
     ...(entryHint ? { entryHint } : {}),
+    timeoutSeconds,
     allowLogin: flags["no-login"] !== true,
   };
+}
+
+function parseUploadTimeoutSeconds(value: unknown): number {
+  if (value === undefined) return DEFAULT_STAGED_UPLOAD_TIMEOUT_SECONDS;
+  if (typeof value !== "string" || !value.trim()) {
+    throw new CliError("usage.upload_timeout_invalid", "--timeout-sec must be a positive number of seconds.", EXIT_CODES.usage);
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new CliError("usage.upload_timeout_invalid", "--timeout-sec must be a positive number of seconds.", EXIT_CODES.usage);
+  }
+  return parsed;
 }
 
 function sha256Hex(bytes: Uint8Array): string {
@@ -226,9 +242,9 @@ function toBlob(bytes: Uint8Array, contentType: string): Blob {
   return new Blob([buffer], { type: contentType });
 }
 
-async function abortBestEffort(context: CommandContext, uploadId: string, allowLogin: boolean): Promise<void> {
+async function abortBestEffort(context: CommandContext, uploadId: string, allowLogin: boolean, timeoutSeconds: number): Promise<void> {
   try {
-    await callToolWithRetry(context, ABORT_STAGED_UPLOAD_TOOL_NAME, { uploadId }, allowLogin);
+    await callToolWithRetry(context, ABORT_STAGED_UPLOAD_TOOL_NAME, { uploadId }, allowLogin, { timeoutSeconds });
   } catch {
     // Best-effort cleanup only. Preserve the upload failure as the surfaced error.
   }
@@ -256,7 +272,7 @@ async function putBytesToStagedUpload(input: {
 }
 
 export async function runUploadCommand(args: string[], context: CommandContext): Promise<void> {
-  if (showHelpIfRequested(args, context, "Usage: vibecodr upload --zip <path> [--idempotency-key <key>] [--root-hint <path>] [--entry-hint <path>] [--no-login]\n       vibecodr upload --image <path> [--kind cover_image|avatar_image] [--content-type <mime>] [--no-login]")) return;
+  if (showHelpIfRequested(args, context, "Usage: vibecodr upload --zip <path> [--idempotency-key <key>] [--root-hint <path>] [--entry-hint <path>] [--timeout-sec <n>] [--no-login]\n       vibecodr upload --image <path> [--kind cover_image|avatar_image] [--content-type <mime>] [--timeout-sec <n>] [--no-login]")) return;
   const input = parseUploadArgs(args);
   const fileInfo = await stat(input.filePath).catch((error: unknown) => {
     throw new CliError(
@@ -276,6 +292,7 @@ export async function runUploadCommand(args: string[], context: CommandContext):
   const fileName = basename(input.filePath) || (input.kind === "source_zip" ? "source.zip" : "image");
   const contentType = inferContentType(input.kind, fileName, input.contentType);
   const hash = sha256Hex(bytes);
+  const mcpRequestOptions = { timeoutSeconds: input.timeoutSeconds };
   const { result: createResult } = await callToolWithRetry(context, CREATE_STAGED_UPLOAD_TOOL_NAME, {
     kind: input.kind,
     fileName,
@@ -284,7 +301,7 @@ export async function runUploadCommand(args: string[], context: CommandContext):
     sha256: hash,
     createdBySurface: input.kind === "source_zip" ? "cli.upload.zip" : "cli.upload.image",
     ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
-  }, input.allowLogin);
+  }, input.allowLogin, mcpRequestOptions);
   const created = readCreateResult(createResult);
 
   try {
@@ -298,7 +315,7 @@ export async function runUploadCommand(args: string[], context: CommandContext):
       uploadId: created.uploadId,
       sizeBytes: bytes.byteLength,
       sha256: hash,
-    }, input.allowLogin);
+    }, input.allowLogin, mcpRequestOptions);
     const completed = readCompleteResult(completeResult, created.uploadId);
     const quickPublishPayload = {
       ...(input.kind === "source_zip"
@@ -351,7 +368,7 @@ export async function runUploadCommand(args: string[], context: CommandContext):
       ]
     );
   } catch (error) {
-    await abortBestEffort(context, created.uploadId, input.allowLogin);
+    await abortBestEffort(context, created.uploadId, input.allowLogin, input.timeoutSeconds);
     throw error;
   }
 }
