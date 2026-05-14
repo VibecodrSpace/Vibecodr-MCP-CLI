@@ -1,0 +1,45 @@
+name: mirror to VibecodrSpace
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-to-vibecodrspace-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    if: github.repository == 'BradenHartsell/Vibecodr-MCP-CLI'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push main and tags to VibecodrSpace mirror
+        env:
+          VIBECODRSPACE_MIRROR_TOKEN: ${{ secrets.VIBECODRSPACE_MIRROR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${VIBECODRSPACE_MIRROR_TOKEN:-}" ]]; then
+            echo "VIBECODRSPACE_MIRROR_TOKEN is not configured." >&2
+            exit 1
+          fi
+
+          git fetch origin +refs/heads/main:refs/remotes/origin/main +refs/tags/*:refs/tags/*
+          git remote add mirror "https://x-access-token:${VIBECODRSPACE_MIRROR_TOKEN}@github.com/VibecodrSpace/Vibecodr-MCP-CLI.git"
+          trap 'git remote remove mirror >/dev/null 2>&1 || true' EXIT
+
+          git push mirror refs/remotes/origin/main:refs/heads/main
+          git push mirror --tags
