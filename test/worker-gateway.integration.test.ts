@@ -279,7 +279,9 @@ async function createGatewayServer(providerBaseUrl: string, vibecodrApiBaseUrl: 
       res.end(bodyBuffer);
     } catch (error) {
       res.statusCode = 500;
-      res.end(String(error));
+      res.setHeader("content-type", "text/plain; charset=utf-8");
+      console.error(error);
+      res.end("Internal test worker error.");
     }
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
