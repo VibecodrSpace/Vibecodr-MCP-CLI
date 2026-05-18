@@ -48,6 +48,8 @@
     "check:worker": "tsc -p tsconfig.worker.json --noEmit",
     "test": "node --import tsx --test test/**/*.test.ts",
     "test:live-smoke": "node --import tsx --test test/live-smoke.smoke.ts",
+    "test:upgrade-smoke": "node --import tsx --test test/upgrade-path.smoke.ts",
+    "test:pulse-smoke": "node --import tsx --test test/pulse-e2e.smoke.ts",
     "test:integration:worker": "node --import tsx --test test/worker-gateway.integration.test.ts",
     "verify:artifact": "node scripts/check-pack-artifact.mjs",
     "verify:release": "node scripts/check-release-readiness.mjs",
