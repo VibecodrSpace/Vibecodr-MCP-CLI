@@ -14,7 +14,15 @@ export function commandExists(command: string): boolean {
 
 export function runCommand(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: "ignore" });
+    // On Windows, npm-installed CLIs (codex, code, claude) are .cmd/.bat shims that
+    // Node.js spawn cannot launch directly without a shell. On POSIX they are real
+    // executables and shell: false is correct.
+    const useShell = process.platform === "win32";
+    const child = spawn(command, args, {
+      stdio: "ignore",
+      shell: useShell,
+      windowsHide: true
+    });
     child.once("error", reject);
     child.once("exit", (code) => {
       if (code === 0) resolve();

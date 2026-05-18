@@ -40,6 +40,19 @@ export function projectCursorConfigPath(rootPath: string): string {
   return join(rootPath, ".cursor", "mcp.json");
 }
 
+export function claudeDesktopConfigPath(): string {
+  switch (process.platform) {
+    case "darwin":
+      return join(homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json");
+    case "win32":
+      return join(windowsAppDataPath(), "Claude", "claude_desktop_config.json");
+    default: {
+      const xdg = process.env["XDG_CONFIG_HOME"] || join(homedir(), ".config");
+      return join(xdg, "Claude", "claude_desktop_config.json");
+    }
+  }
+}
+
 export function secretStoreDirectory(): string {
   return join(vibecodrConfigRoot(), "secrets");
 }

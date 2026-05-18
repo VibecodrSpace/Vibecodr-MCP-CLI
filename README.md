@@ -23,6 +23,7 @@ Currently implemented command surface:
 - `login`
 - `logout`
 - `status`
+- `whoami`
 - `tools`
 - `call`
 - `upload`

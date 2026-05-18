@@ -5,15 +5,18 @@ import { uninstallCodex } from "../clients/codex.js";
 import { uninstallCursor } from "../clients/cursor.js";
 import { uninstallVsCode } from "../clients/vscode.js";
 import { uninstallWindsurf } from "../clients/windsurf.js";
+import { uninstallClaudeDesktop } from "../clients/claude-desktop.js";
 import { showHelpIfRequested } from "./help.js";
 import type { ClientTarget } from "../types/install.js";
 import type { CommandContext } from "./context.js";
 
+const SUPPORTED_CLIENTS: ClientTarget[] = ["codex", "cursor", "vscode", "windsurf", "claude-desktop"];
+
 export async function runUninstallCommand(args: string[], context: CommandContext): Promise<void> {
-  if (showHelpIfRequested(args, context, "Usage: vibecodr uninstall <codex|cursor|vscode|windsurf> [--scope user|project] [--path <dir>] [--name <server-name>] [--dry-run]")) return;
+  if (showHelpIfRequested(args, context, "Usage: vibecodr uninstall <codex|cursor|vscode|windsurf|claude-desktop> [--scope user|project] [--path <dir>] [--name <server-name>] [--dry-run]")) return;
   const client = args[0] as ClientTarget | undefined;
-  if (!client || !["codex", "cursor", "vscode", "windsurf"].includes(client)) {
-    throw new CliError("usage.uninstall_client", "Usage: uninstall <codex|cursor|vscode|windsurf> [options]", EXIT_CODES.usage);
+  if (!client || !SUPPORTED_CLIENTS.includes(client)) {
+    throw new CliError("usage.uninstall_client", `Usage: uninstall <${SUPPORTED_CLIENTS.join("|")}> [options]`, EXIT_CODES.usage);
   }
   const { flags } = parseFlags(args.slice(1), {
     valueFlags: ["scope", "path", "name"],
@@ -44,7 +47,9 @@ export async function runUninstallCommand(args: string[], context: CommandContex
       ? await uninstallCursor(request, managed.location)
       : client === "vscode"
         ? await uninstallVsCode(request, managed.location, managed.method === "uri" ? "cli" : managed.method)
-        : await uninstallWindsurf(request, managed.location);
+        : client === "windsurf"
+          ? await uninstallWindsurf(request, managed.location)
+          : await uninstallClaudeDesktop(request, managed.location);
 
   if (!request.dryRun && result.changed) {
     await manifest.remove((entry) => entry.client === client && entry.scope === scope && entry.name === name && entry.location === managed.location);

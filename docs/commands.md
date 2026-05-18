@@ -46,6 +46,17 @@ Syntax:
 
 Without `--probe`, this reads only local state.
 
+### `whoami`
+
+Syntax:
+
+`vibecodr whoami [--no-login]`
+
+Shows the connected Vibecodr account and plan by calling the protected
+`get_account_capabilities` MCP tool. It uses the same refresh and interactive
+login retry path as `call`, but prints only account identity, plan, CLI profile,
+server URL, and session state.
+
 ### `tools`
 
 Syntax:
@@ -155,15 +166,22 @@ Syntax:
 
 Syntax:
 
-`vibecodr install <codex|cursor|vscode|windsurf> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]`
+`vibecodr install <codex|cursor|vscode|windsurf|claude-desktop> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]`
 
 Install config only. Runtime auth remains CLI-owned or editor-owned depending on where the server is used.
+
+Claude Desktop does not load remote HTTP MCP servers natively, so the installer writes the documented `mcp-remote` stdio proxy entry (`{ command: "npx", args: ["mcp-remote", <url>] }`). Node.js / npx must be on PATH for the proxy to launch. Users can alternatively add the MCP URL via Settings -> Connectors -> Add custom connector in the desktop app.
+
+Platform support matrix:
+- **macOS**: writes to `~/Library/Application Support/Claude/claude_desktop_config.json`.
+- **Windows**: writes to `%APPDATA%\Claude\claude_desktop_config.json`.
+- **Linux**: Anthropic does not ship an official Claude Desktop build for Linux. The installer writes to `${XDG_CONFIG_HOME:-$HOME/.config}/Claude/claude_desktop_config.json`, the path used by community repackages. If you are not running such a build, install Claude Code and use `vibecodr install codex` / equivalent instead.
 
 ### `uninstall`
 
 Syntax:
 
-`vibecodr uninstall <codex|cursor|vscode|windsurf> [--scope user|project] [--path <dir>] [--name <server-name>] [--dry-run]`
+`vibecodr uninstall <codex|cursor|vscode|windsurf|claude-desktop> [--scope user|project] [--path <dir>] [--name <server-name>] [--dry-run]`
 
 ## Exit codes
 

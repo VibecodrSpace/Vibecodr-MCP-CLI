@@ -8,6 +8,7 @@ import { installCursor, uninstallCursor } from "../src/clients/cursor.js";
 import { installCodex, uninstallCodex } from "../src/clients/codex.js";
 import { installVsCode, uninstallVsCode } from "../src/clients/vscode.js";
 import { installWindsurf, uninstallWindsurf } from "../src/clients/windsurf.js";
+import { installClaudeDesktop, uninstallClaudeDesktop } from "../src/clients/claude-desktop.js";
 import { CLIENT_INFO } from "../src/core/mcp-client.js";
 
 const require = createRequire(import.meta.url);
@@ -33,8 +34,9 @@ test("cursor installer writes and removes a managed entry", async () => {
     path: root
   });
   assert.equal(install.changed, true);
-  const written = JSON.parse(await readFile(location, "utf8")) as { mcpServers: Record<string, { url: string }> };
+  const written = JSON.parse(await readFile(location, "utf8")) as { mcpServers: Record<string, { url: string; type?: string }> };
   assert.equal(written.mcpServers["vibecodr"]?.url, "https://openai.vibecodr.space/mcp");
+  assert.equal("type" in (written.mcpServers["vibecodr"] ?? {}), false);
 
   const uninstall = await uninstallCursor({
     serverUrl: "https://openai.vibecodr.space/mcp",
@@ -45,6 +47,75 @@ test("cursor installer writes and removes a managed entry", async () => {
   assert.equal(uninstall.changed, true);
   const removed = JSON.parse(await readFile(location, "utf8")) as { mcpServers?: Record<string, unknown> };
   assert.equal(removed.mcpServers, undefined);
+});
+
+test("claude-desktop installer writes mcp-remote stdio proxy and removes managed entry", async () => {
+  const root = await mkdtemp(join(tmpdir(), "vibecodr-claude-desktop-"));
+  const location = join(root, "claude_desktop_config.json");
+  const install = await installClaudeDesktop({
+    serverUrl: "https://openai.vibecodr.space/mcp",
+    name: "vibecodr",
+    scope: "user",
+    path: root
+  });
+  assert.equal(install.changed, true);
+  const written = JSON.parse(await readFile(location, "utf8")) as { mcpServers: Record<string, { command: string; args: string[]; url?: string }> };
+  assert.equal(written.mcpServers["vibecodr"]?.command, "npx");
+  assert.deepEqual(written.mcpServers["vibecodr"]?.args, ["mcp-remote", "https://openai.vibecodr.space/mcp"]);
+  assert.equal("url" in (written.mcpServers["vibecodr"] ?? {}), false);
+  assert.match(install.nextStep, /mcp-remote stdio proxy/);
+
+  const idempotent = await installClaudeDesktop({
+    serverUrl: "https://openai.vibecodr.space/mcp",
+    name: "vibecodr",
+    scope: "user",
+    path: root
+  });
+  assert.equal(idempotent.changed, false);
+
+  const uninstall = await uninstallClaudeDesktop({
+    serverUrl: "https://openai.vibecodr.space/mcp",
+    name: "vibecodr",
+    scope: "user",
+    path: root
+  });
+  assert.equal(uninstall.changed, true);
+  const removed = JSON.parse(await readFile(location, "utf8")) as { mcpServers?: Record<string, unknown> };
+  assert.equal(removed.mcpServers, undefined);
+});
+
+test("claude-desktop installer refuses to overwrite a differing entry without --overwrite", async () => {
+  const root = await mkdtemp(join(tmpdir(), "vibecodr-claude-desktop-conflict-"));
+  const location = join(root, "claude_desktop_config.json");
+  await writeFile(
+    location,
+    JSON.stringify({
+      mcpServers: {
+        vibecodr: { command: "npx", args: ["mcp-remote", "https://other.example.com/mcp"] }
+      }
+    }, null, 2),
+    "utf8"
+  );
+  await assert.rejects(
+    installClaudeDesktop({
+      serverUrl: "https://openai.vibecodr.space/mcp",
+      name: "vibecodr",
+      scope: "user",
+      path: root
+    }),
+    /different value/
+  );
+
+  const forced = await installClaudeDesktop({
+    serverUrl: "https://openai.vibecodr.space/mcp",
+    name: "vibecodr",
+    scope: "user",
+    path: root,
+    overwrite: true
+  });
+  assert.equal(forced.changed, true);
+  const written = JSON.parse(await readFile(location, "utf8")) as { mcpServers: Record<string, { args: string[] }> };
+  assert.deepEqual(written.mcpServers["vibecodr"]?.args, ["mcp-remote", "https://openai.vibecodr.space/mcp"]);
 });
 
 test("cursor installer fails on invalid existing JSON instead of treating it as empty", async () => {

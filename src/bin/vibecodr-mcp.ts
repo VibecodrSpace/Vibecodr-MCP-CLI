@@ -9,6 +9,7 @@ import { CliError, EXIT_CODES } from "../cli/errors.js";
 import { runLoginCommand } from "../commands/login.js";
 import { runLogoutCommand } from "../commands/logout.js";
 import { runStatusCommand } from "../commands/status.js";
+import { runWhoamiCommand } from "../commands/whoami.js";
 import { runToolsCommand } from "../commands/tools.js";
 import { runCallCommand } from "../commands/call.js";
 import { runDoctorCommand } from "../commands/doctor.js";
@@ -29,6 +30,7 @@ function helpText(): string {
     "  login",
     "  logout",
     "  status",
+    "  whoami",
     "  tools [tool-name]",
     "  call <tool-name>",
     "  upload --zip <path>",
@@ -89,6 +91,9 @@ async function main(): Promise<void> {
       return;
     case "status":
       await runStatusCommand(commandArgs, context);
+      return;
+    case "whoami":
+      await runWhoamiCommand(commandArgs, context);
       return;
     case "tools":
       await runToolsCommand(commandArgs, context);

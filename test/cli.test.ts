@@ -10,6 +10,7 @@ import { OFFICIAL_CLIENT_METADATA_URL, OFFICIAL_SERVER_URL, officialClientInform
 import { runCallCommand } from "../src/commands/call.js";
 import { runUploadCommand } from "../src/commands/upload.js";
 import { runLoginCommand } from "../src/commands/login.js";
+import { runWhoamiCommand } from "../src/commands/whoami.js";
 import { runPulseSetupCommand } from "../src/commands/pulse-setup.js";
 import { runPulsePublishCommand } from "../src/commands/pulse-publish.js";
 import { runPulseCommand } from "../src/commands/pulse.js";
@@ -151,6 +152,80 @@ test("call command forwards nested direct_files paths without pre-encoding them 
   assert.equal(parsed.arguments.payload.files[0].content, "[redacted]");
   assert.equal(parsed.arguments.payload.files[1].content, "[redacted]");
   assert.doesNotMatch(JSON.stringify(parsed.arguments), /console\.log|export default/);
+});
+
+test("whoami prints the connected account from account capabilities without dumping the full tool payload", async () => {
+  const writes: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = ((chunk: string | Uint8Array) => {
+    writes.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+
+  try {
+    await runWhoamiCommand([], {
+      globalOptions: {
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      },
+      output: new Output({
+        profile: "default",
+        json: true,
+        verbose: false,
+        nonInteractive: true
+      }),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {
+        resolveProfile: async () => ({ profileName: "default", serverUrl: "https://example.test/mcp" }),
+        getSession: async () => ({
+          accessToken: "token-1",
+          expiresAt: "2099-01-01T00:00:00.000Z"
+        }),
+        sessionState: () => "valid"
+      } as never,
+      runtimeClient: {
+        callTool: async (_serverUrl: string, _accessToken: string | undefined, name: string, input: Record<string, unknown>) => {
+          assert.equal(name, "get_account_capabilities");
+          assert.deepEqual(input, {});
+          return {
+            structuredContent: {
+              profile: {
+                id: "user_123",
+                handle: "vibecodr",
+                name: "Vibecodr",
+                avatarUrl: "https://example.test/avatar.png"
+              },
+              quota: {
+                plan: "Pro",
+                usage: { storage: 1 },
+                limits: { internalOnly: "not for whoami" }
+              },
+              recommendations: ["keep this out of whoami"]
+            }
+          };
+        }
+      } as never
+    });
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+
+  const parsed = JSON.parse(writes.join(""));
+  assert.equal(parsed.profile, "default");
+  assert.equal(parsed.serverUrl, "https://example.test/mcp");
+  assert.equal(parsed.sessionState, "valid");
+  assert.deepEqual(parsed.account, {
+    id: "user_123",
+    handle: "vibecodr",
+    name: "Vibecodr",
+    avatarUrl: "https://example.test/avatar.png",
+    plan: "Pro"
+  });
+  assert.equal(Object.hasOwn(parsed, "result"), false);
+  assert.doesNotMatch(JSON.stringify(parsed), /internalOnly|recommendations|token-1/);
 });
 
 test("call command passes timeout-sec as a transport option without changing tool arguments", async () => {

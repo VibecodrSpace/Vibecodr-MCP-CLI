@@ -5,7 +5,7 @@ import { showHelpIfRequested } from "./help.js";
 import type { CommandContext } from "./context.js";
 
 export async function runDoctorCommand(args: string[], context: CommandContext): Promise<void> {
-  if (showHelpIfRequested(args, context, "Usage: vibecodr doctor [--client <codex|cursor|vscode|windsurf>]")) return;
+  if (showHelpIfRequested(args, context, "Usage: vibecodr doctor [--client <codex|cursor|vscode|windsurf|claude-desktop>]")) return;
   const { flags } = parseFlags(args, {
     valueFlags: ["client"]
   });

@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { SecretStore } from "../storage/secret-store.js";
 import { TokenManager } from "../auth/token-manager.js";
 import type { GlobalOptions } from "../types/config.js";
-import { codexConfigPath, cursorUserConfigPath, vscodeWorkspaceConfigPath, windsurfLegacyConfigPath, windsurfUserConfigPath } from "../platform/paths.js";
+import { claudeDesktopConfigPath, codexConfigPath, cursorUserConfigPath, vscodeWorkspaceConfigPath, windsurfLegacyConfigPath, windsurfUserConfigPath } from "../platform/paths.js";
 import { browserLauncherAvailable } from "../platform/browser.js";
 import { commandExists } from "../platform/exec.js";
 
@@ -138,6 +138,16 @@ export async function runDoctor(globalOptions: GlobalOptions, tokenManager: Toke
       id: "windsurf-legacy-config",
       status: await pathExists(windsurfLegacyConfigPath()) ? "warn" : "pass",
       summary: `Legacy Windsurf plugin path: ${windsurfLegacyConfigPath()}`
+    });
+  }
+  if (targetClient === "claude-desktop") {
+    checks.push(await configLocationCheck(claudeDesktopConfigPath(), "claude-desktop-config"));
+    checks.push({
+      id: "npx-available",
+      status: commandExists("npx") ? "pass" : "warn",
+      summary: commandExists("npx")
+        ? "npx is on PATH (required for the mcp-remote stdio proxy used by Claude Desktop)."
+        : "npx is not on PATH. Install Node.js so Claude Desktop can launch the mcp-remote stdio proxy."
     });
   }
 

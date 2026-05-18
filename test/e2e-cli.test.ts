@@ -369,7 +369,7 @@ test("CLI supports help aliases everywhere and version aliases at root", async (
     assert.equal(result.code, 0, `${alias} failed\n${result.stderr}`);
     assert.match(result.stdout.trim(), /^\d+\.\d+\.\d+$/);
   }
-  for (const command of ["login", "logout", "status", "tools", "call", "pulse-setup", "pulse-publish", "pulse", "doctor", "config", "install", "uninstall"]) {
+  for (const command of ["login", "logout", "status", "whoami", "tools", "call", "pulse-setup", "pulse-publish", "pulse", "doctor", "config", "install", "uninstall"]) {
     for (const alias of rootHelpAliases) {
       const result = await runCli([command, alias], env);
       assert.equal(result.code, 0, `${command} ${alias} failed\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
@@ -511,7 +511,7 @@ test("CLI clears stored auth after invalid_grant on refresh", async () => {
   }
 });
 
-test("CLI install smoke covers Codex, Cursor, VS Code, and Windsurf adapters", async () => {
+test("CLI install smoke covers Codex, Cursor, VS Code, Windsurf, and Claude Desktop adapters", async () => {
   const temp = await mkdtemp(join(tmpdir(), "vibecodr-cli-install-e2e-"));
   const env = {
     VIBECDR_MCP_CONFIG_PATH: join(temp, "config.json"),
@@ -528,8 +528,9 @@ test("CLI install smoke covers Codex, Cursor, VS Code, and Windsurf adapters", a
   const cursorRoot = join(temp, "cursor-project");
   const cursor = await runCli(["install", "cursor", "--scope", "project", "--path", cursorRoot, "--json"], env);
   assert.equal(cursor.code, 0, `cursor install failed\nstdout:\n${cursor.stdout}\nstderr:\n${cursor.stderr}`);
-  const cursorConfig = JSON.parse(await readFile(join(cursorRoot, ".cursor", "mcp.json"), "utf8")) as { mcpServers: Record<string, { url: string }> };
+  const cursorConfig = JSON.parse(await readFile(join(cursorRoot, ".cursor", "mcp.json"), "utf8")) as { mcpServers: Record<string, { url: string; type?: string }> };
   assert.equal(cursorConfig.mcpServers["vibecodr"]?.url, "https://openai.vibecodr.space/mcp");
+  assert.equal("type" in (cursorConfig.mcpServers["vibecodr"] ?? {}), false);
 
   const vscodeRoot = join(temp, "vscode-project");
   const vscode = await runCli(["install", "vscode", "--scope", "project", "--path", vscodeRoot, "--json"], env);
@@ -542,4 +543,12 @@ test("CLI install smoke covers Codex, Cursor, VS Code, and Windsurf adapters", a
   assert.equal(windsurf.code, 0, `windsurf install failed\nstdout:\n${windsurf.stdout}\nstderr:\n${windsurf.stderr}`);
   const windsurfConfig = JSON.parse(await readFile(join(windsurfRoot, "mcp_config.json"), "utf8")) as { mcpServers: Record<string, { serverUrl: string }> };
   assert.equal(windsurfConfig.mcpServers["vibecodr"]?.serverUrl, "https://openai.vibecodr.space/mcp");
+
+  const claudeDesktopRoot = join(temp, "claude-desktop-user");
+  const claudeDesktop = await runCli(["install", "claude-desktop", "--scope", "user", "--path", claudeDesktopRoot, "--json"], env);
+  assert.equal(claudeDesktop.code, 0, `claude-desktop install failed\nstdout:\n${claudeDesktop.stdout}\nstderr:\n${claudeDesktop.stderr}`);
+  const claudeDesktopConfig = JSON.parse(await readFile(join(claudeDesktopRoot, "claude_desktop_config.json"), "utf8")) as { mcpServers: Record<string, { command: string; args: string[]; url?: string }> };
+  assert.equal(claudeDesktopConfig.mcpServers["vibecodr"]?.command, "npx");
+  assert.deepEqual(claudeDesktopConfig.mcpServers["vibecodr"]?.args, ["mcp-remote", "https://openai.vibecodr.space/mcp"]);
+  assert.equal("url" in (claudeDesktopConfig.mcpServers["vibecodr"] ?? {}), false);
 });

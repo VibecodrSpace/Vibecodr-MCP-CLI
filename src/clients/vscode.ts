@@ -12,8 +12,11 @@ type VsCodeConfig = {
 
 function runCli(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
+    const useShell = process.platform === "win32";
     const child = spawn(command, args, {
-      stdio: "ignore"
+      stdio: "ignore",
+      shell: useShell,
+      windowsHide: true
     });
     child.once("error", reject);
     child.once("exit", (code) => {

@@ -5,19 +5,32 @@ import { installCodex } from "../clients/codex.js";
 import { installCursor } from "../clients/cursor.js";
 import { installVsCode } from "../clients/vscode.js";
 import { installWindsurf } from "../clients/windsurf.js";
+import { installClaudeDesktop } from "../clients/claude-desktop.js";
 import { showHelpIfRequested } from "./help.js";
 import type { ClientTarget } from "../types/install.js";
 import type { CommandContext } from "./context.js";
+
+const SUPPORTED_CLIENTS: ClientTarget[] = ["codex", "cursor", "vscode", "windsurf", "claude-desktop"];
 
 function defaultName(serverUrl: string): string {
   return serverUrl.includes("staging") ? "vibecodr-staging" : "vibecodr";
 }
 
+function clientDisplayName(client: ClientTarget): string {
+  switch (client) {
+    case "codex": return "Codex";
+    case "cursor": return "Cursor";
+    case "vscode": return "VS Code";
+    case "windsurf": return "Windsurf";
+    case "claude-desktop": return "Claude Desktop";
+  }
+}
+
 export async function runInstallCommand(args: string[], context: CommandContext): Promise<void> {
-  if (showHelpIfRequested(args, context, "Usage: vibecodr install <codex|cursor|vscode|windsurf> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]")) return;
+  if (showHelpIfRequested(args, context, "Usage: vibecodr install <codex|cursor|vscode|windsurf|claude-desktop> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]")) return;
   const client = args[0] as ClientTarget | undefined;
-  if (!client || !["codex", "cursor", "vscode", "windsurf"].includes(client)) {
-    throw new CliError("usage.install_client", "Usage: install <codex|cursor|vscode|windsurf> [options]", EXIT_CODES.usage);
+  if (!client || !SUPPORTED_CLIENTS.includes(client)) {
+    throw new CliError("usage.install_client", `Usage: install <${SUPPORTED_CLIENTS.join("|")}> [options]`, EXIT_CODES.usage);
   }
   const { flags } = parseFlags(args.slice(1), {
     valueFlags: ["scope", "path", "name"],
@@ -40,7 +53,9 @@ export async function runInstallCommand(args: string[], context: CommandContext)
       ? await installCursor(request)
       : client === "vscode"
         ? await installVsCode(request)
-        : await installWindsurf(request);
+        : client === "windsurf"
+          ? await installWindsurf(request)
+          : await installClaudeDesktop(request);
 
   if (!request.dryRun) {
     const manifest = new InstallManifestStore();
@@ -69,7 +84,7 @@ export async function runInstallCommand(args: string[], context: CommandContext)
       `Managed: yes`,
       result.nextStep,
       ...(result.notes || []),
-      `${result.client === "codex" ? "Codex" : result.client === "vscode" ? "VS Code" : result.client === "cursor" ? "Cursor" : "Windsurf"} config install only. CLI auth and installed-client auth remain separate.`
+      `${clientDisplayName(result.client)} config install only. CLI auth and installed-client auth remain separate.`
     ]
   );
 }

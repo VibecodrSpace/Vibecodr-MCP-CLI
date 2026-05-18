@@ -4,7 +4,7 @@ This repository is the standalone Vibecodr CLI package. It is related to the Vib
 
 ## Git Ownership - Read This First
 
-This repo is locally nested at `C:\Users\brade\OneDrive\Desktop\vibecodr\tools\mcp\Vibecodr-MCP-CLI` for agent ergonomics only.
+This repo lives locally at `C:\Users\brade\OneDrive\Desktop\vibecodr-tools\mcp\Vibecodr-MCP-CLI`. A compatibility junction may also expose it at `C:\Users\brade\OneDrive\Desktop\vibecodr\tools\mcp\Vibecodr-MCP-CLI` for older parent repo scripts.
 
 This is its own Git repository. It is connected to this GitHub repo:
 
@@ -12,7 +12,7 @@ This is its own Git repository. It is connected to this GitHub repo:
 
 Expected Git facts before committing, pushing, or publishing:
 
-- `git rev-parse --show-toplevel` prints `C:/Users/brade/OneDrive/Desktop/vibecodr/tools/mcp/Vibecodr-MCP-CLI`
+- `git rev-parse --show-toplevel` prints `C:/Users/brade/OneDrive/Desktop/vibecodr-tools/mcp/Vibecodr-MCP-CLI`
 - `git remote get-url origin` prints `https://github.com/BradenHartsell/Vibecodr-MCP-CLI.git`
 - the normal branch is `main`
 - the package name is `@vibecodr/cli`
@@ -20,6 +20,23 @@ Expected Git facts before committing, pushing, or publishing:
 Do not stage, commit, push, publish, or deploy this project from the parent `vibecodr` Git repository. The parent repo ignores `/tools/`, and this child repo must stay independently versioned. If the Git root is `C:\Users\brade\OneDrive\Desktop\vibecodr`, stop and move into this repository first.
 
 The sibling `Vibecodr-MCP` repo is the hosted MCP gateway. The main `vibecodr` checkout is the application/platform monorepo. Keep changes, commits, branches, releases, and verification results separate unless the user explicitly asks for a coordinated multi-repo change.
+
+## Dependency On Vibecodr
+
+This CLI is a separate Git repo, but it depends on the main Vibecodr platform
+and the hosted MCP gateway. It is not an island.
+
+Before changing command behavior, output contracts, auth storage, MCP tool
+calls, upload/import flows, product wording, or release behavior, inspect the
+parent checkout at:
+
+`C:\Users\brade\OneDrive\Desktop\vibecodr`
+
+Useful parent anchors include `docs\DOMAIN-REFERENCE.md`,
+`docs\SYSTEMS-REFERENCE.md`, `docs\agent-context\staged-upload-contract.md`,
+`workers\api`, `openapi.yaml`, and the release scripts under `scripts`. Keep
+the CLI, gateway, and parent repo aligned whenever a behavior crosses that
+boundary.
 
 ## Operating Stance
 
