@@ -22,6 +22,7 @@ import { runPulseSetupCommand } from "../commands/pulse-setup.js";
 import { runPulsePublishCommand } from "../commands/pulse-publish.js";
 import { runPulseCommand } from "../commands/pulse.js";
 import { runUploadCommand } from "../commands/upload.js";
+import { runUpdateCommand } from "../commands/update.js";
 
 reconcileEnv();
 await migrateLegacyDirsOnce();
@@ -49,6 +50,7 @@ function helpText(): string {
     "  pulse <list|get|status|run|archive|restore|create|deploy>",
     "    Publishes a standalone Pulse with private source/metadata visibility by default.",
     "    The runtime URL is still public HTTP unless the Pulse code rejects callers.",
+    "  update [--check] [--yes] [--via <npm|pnpm|yarn|bun>]",
     "",
     "Global flags:",
     "  --profile <name>",
@@ -129,6 +131,9 @@ async function main(): Promise<void> {
       return;
     case "pulse":
       await runPulseCommand(commandArgs, context);
+      return;
+    case "update":
+      await runUpdateCommand(commandArgs, context);
       return;
     default:
       if (VC_TOOLS_ONLY_COMMANDS.has(command)) {

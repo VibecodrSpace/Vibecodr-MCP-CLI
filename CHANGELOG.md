@@ -2,6 +2,25 @@
 
 Pre-1.0.0 history for the `@vibecodr/cli@0.2.x` and `0.1.x` lines lives at [`docs/legacy/CHANGELOG-mcp-cli.md`](docs/legacy/CHANGELOG-mcp-cli.md). The `@vibecodr/vc-tools@0.1.x` line was the other half of the May 2026 merge; its source history is preserved in the archived [`BradenHartsell/vc-tools`](https://github.com/BradenHartsell/vc-tools) repository.
 
+## 1.0.4
+
+Adds `vibecodr update` (alias: `vibecodr-mcp update`) for in-place upgrades of the global install. The command fetches the latest `@vibecodr/cli` version from the npm registry, compares against the currently-installed version, and (with confirmation by default) runs the appropriate package-manager install command.
+
+Behavior summary:
+
+- **`vibecodr update --check`** prints `current → latest` and exits without installing. Always safe to run.
+- **`vibecodr update`** with no flags fetches the latest version, prints the install command that's about to run, and prompts before executing. `--yes` (or the global `--non-interactive`) skips the prompt.
+- **`vibecodr update --via <npm|pnpm|yarn|bun>`** forces the install channel. Without the flag, the command auto-detects which manager owns the current install by intersecting `pnpm root -g`, `yarn global dir`, the Bun global root, and `npm root -g` against the CLI's own install location. If no match is found the command defaults to npm with a warning.
+- Refuses to run from a source-tree checkout of `@vibecodr/cli` (use `git pull` for those) or from an `npx` ephemeral cache (`npx` invocations are already ephemeral; the message recommends `npm install -g` for persistence).
+- Honors `--json` for scripted invocations; envelopes carry `current`, `latest`, `upToDate`, and on a successful install `previousVersion`, `installedVersion`, `via`.
+
+The command is wired into the canonical `vibecodr` / `vibecodr-mcp` bins only. The legacy `vc-tools` bin does not gain `update` — that surface stays byte-equivalent to vc-tools@0.1.4.
+
+- `src/commands/update.ts`: new command module.
+- `src/bin/vibecodr-mcp.ts`: dispatcher case + help text entry.
+- `test/update.test.ts`: 6 cases (version comparator, both `--check` paths, unsupported `--via`, source-tree refusal, `--help` short-circuit).
+- `test/e2e-cli.test.ts`: extends the per-command `--help` matrix to include `update`.
+
 ## 1.0.3
 
 Closes a Windows-CI flake in the hosted Browser Agent Workflow's idle-timeout closure path. No behavior change to the dispatcher or any CLI surface; the fix lives entirely inside `src/hosted/worker.ts` and matters only for the worker test suite plus the deployed Cloudflare Worker.

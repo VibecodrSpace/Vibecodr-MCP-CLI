@@ -369,7 +369,7 @@ test("CLI supports help aliases everywhere and version aliases at root", async (
     assert.equal(result.code, 0, `${alias} failed\n${result.stderr}`);
     assert.match(result.stdout.trim(), /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
   }
-  for (const command of ["login", "logout", "status", "whoami", "tools", "call", "pulse-setup", "pulse-publish", "pulse", "doctor", "config", "install", "uninstall"]) {
+  for (const command of ["login", "logout", "status", "whoami", "tools", "call", "pulse-setup", "pulse-publish", "pulse", "doctor", "config", "install", "uninstall", "update"]) {
     for (const alias of rootHelpAliases) {
       const result = await runCli([command, alias], env);
       assert.equal(result.code, 0, `${command} ${alias} failed\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
