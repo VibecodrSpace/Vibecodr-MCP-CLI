@@ -38,6 +38,17 @@ You installed `npm install -g @vibecodr/vc-tools` and your scripts run `vc-tools
 - You can install the same package as `npm install -g @vibecodr/cli` instead of `@vibecodr/vc-tools`. The bin name `vc-tools` still resolves; the help banner adds a one-line "this is now part of @vibecodr/cli" footnote.
 - `@vibecodr/vc-tools` itself becomes a thin forwarder at version 0.2.0 that depends on `@vibecodr/cli`. Existing pinned installs (`@vibecodr/vc-tools@0.1.4`) continue to work; the 0.2.0 forwarder lets `npm i @vibecodr/vc-tools` (no version) drag in the merged CLI for users who type the legacy package name from memory.
 
+**If `npm install -g @vibecodr/cli` fails with `EEXIST: file already exists` pointing at `<npm-bin>/vc-tools`:**
+
+That's the global-bin collision: both `@vibecodr/cli` and the legacy `@vibecodr/vc-tools` register a `vc-tools` bin under the same path, and npm refuses to overwrite a bin owned by a different package. The fix is one command:
+
+```bash
+npm uninstall -g @vibecodr/vc-tools
+npm install -g @vibecodr/cli
+```
+
+This is safe: the uninstall removes only the npm package and its bin shim. Your OS keychain entry (service `@vibecodr/vc-tools`, the durable Clerk API key) and your config dir are untouched; the merged CLI reads both on first run. From `@vibecodr/cli@1.0.1` onwards, the package ships a `preinstall` script that detects this collision and prints the same instructions instead of letting npm surface a bare `EEXIST`.
+
 **What you can update in CI (no rush):**
 
 - Switch your install command to `npm install -g @vibecodr/cli`. The bin entry `vc-tools` is still mapped, so no script changes are required.
