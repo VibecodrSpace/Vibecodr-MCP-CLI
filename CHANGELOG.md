@@ -2,6 +2,23 @@
 
 Pre-1.0.0 history for the `@vibecodr/cli@0.2.x` and `0.1.x` lines lives at [`docs/legacy/CHANGELOG-mcp-cli.md`](docs/legacy/CHANGELOG-mcp-cli.md). The `@vibecodr/vc-tools@0.1.x` line was the other half of the May 2026 merge; its source history is preserved in the archived [`BradenHartsell/vc-tools`](https://github.com/BradenHartsell/vc-tools) repository.
 
+## 1.0.2
+
+Hardens `preinstall-check.mjs` to also catch the **orphan-bin-shim** case that the 1.0.1 check missed.
+
+When an earlier `npm install -g @vibecodr/cli` (or `@vibecodr/vc-tools`) was aborted mid-flight on Windows — typically because antivirus or an IDE held a file handle on the just-extracted tree during npm's cleanup — npm leaves the bin shim files (`vc-tools`, `vc-tools.cmd`, `vc-tools.ps1`, the `vibecodr` and `vibecodr-mcp` triples) at the global bin dir but the package itself isn't fully registered. The retry trips the same EEXIST because npm refuses to overwrite shim files it didn't write in the current install run.
+
+The preinstall now:
+
+- Inspects the global bin dir (`%APPDATA%\npm\` on Windows, `<prefix>/bin/` on POSIX) for any of the nine Windows shim names or three POSIX shim names.
+- Cross-references against the global node_modules tree: if `<global-root>/@vibecodr/cli/package.json` doesn't exist or doesn't name `@vibecodr/cli`, the shim files are orphans.
+- Prints an actionable cleanup recipe (`Remove-Item ... -Force` on Windows, `rm -f ...` on POSIX) listing the exact files to delete plus the half-installed package directory if present, then `npm install -g @vibecodr/cli`.
+
+The check still bails for non-global installs, local dev installs from the source repo, and `VIBECDR_SKIP_PREINSTALL_CHECK=1` opt-outs, and false-positive-proofs itself: a clean re-install / upgrade of `@vibecodr/cli` (shims present + valid `@vibecodr/cli/package.json` present) passes through silently.
+
+- `preinstall-check.mjs`: orphan-shim detection on top of the existing legacy-package check.
+- `test/preinstall-check.test.ts`: 2 new cases (orphan-blocks, upgrade-passes-through) on top of the original 4.
+
 ## 1.0.1
 
 Fixes the global-install collision for users who already had `@vibecodr/vc-tools@0.1.x` installed globally. Both packages register a `vc-tools` bin under the same path; npm refuses to overwrite a bin owned by a different package, so the install fails with `EEXIST: file already exists`.

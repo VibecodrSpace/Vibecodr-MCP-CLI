@@ -5,6 +5,8 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -68,10 +70,73 @@ test("preinstall-check tolerates `npm ls` failures by exiting 0 (no false-positi
   // returns false; we force PATH to a directory that can't resolve npm,
   // which makes the spawn fail; the script should still exit 0 because we
   // explicitly catch and ignore npm-ls failures.
+  // Also point npm_config_prefix at an empty fresh tmpdir so the
+  // orphan-shim check finds no candidates and stays out of the way of
+  // this test's specific assertion.
   const result = runWith({
     npm_config_global: "true",
     npm_config_local_prefix: path.join(process.env["APPDATA"] ?? "C:\\fallback", "some-other-install"),
+    npm_config_prefix: process.env["TEMP"] ?? "C:\\Temp",
     PATH: path.join(process.env["SystemRoot"] ?? "C:\\Windows", "System32")
   });
   assert.equal(result.code, 0);
+});
+
+async function withFakeNpmPrefix<T>(fn: (prefix: string, binDir: string, root: string) => Promise<T>): Promise<T> {
+  const prefix = await mkdtemp(path.join(os.tmpdir(), "vibecodr-preinstall-prefix-"));
+  try {
+    const binDir = process.platform === "win32" ? prefix : path.join(prefix, "bin");
+    const root = process.platform === "win32"
+      ? path.join(prefix, "node_modules")
+      : path.join(prefix, "lib", "node_modules");
+    await mkdir(binDir, { recursive: true });
+    await mkdir(root, { recursive: true });
+    return await fn(prefix, binDir, root);
+  } finally {
+    await rm(prefix, { recursive: true, force: true });
+  }
+}
+
+test("preinstall-check blocks when orphan vc-tools shims exist and no @vibecodr/cli package owns them", async () => {
+  await withFakeNpmPrefix(async (prefix, binDir) => {
+    const shimNames = process.platform === "win32"
+      ? ["vc-tools", "vc-tools.cmd", "vc-tools.ps1"]
+      : ["vc-tools"];
+    for (const name of shimNames) {
+      await writeFile(path.join(binDir, name), "@echo legacy shim\n", "utf8");
+    }
+    const result = runWith({
+      npm_config_global: "true",
+      npm_config_prefix: prefix,
+      npm_config_local_prefix: path.join(prefix, "elsewhere"),
+      PATH: path.join(process.env["SystemRoot"] ?? "C:\\Windows", "System32")
+    });
+    assert.equal(result.code, 1, `expected exit 1, got ${result.code}; stderr:\n${result.stderr}`);
+    assert.match(result.stderr, /orphan bin shims from a prior install/);
+  });
+});
+
+test("preinstall-check exits 0 when shims exist BUT a valid @vibecodr/cli is at the global root (upgrade case)", async () => {
+  await withFakeNpmPrefix(async (prefix, binDir, root) => {
+    const shimNames = process.platform === "win32"
+      ? ["vc-tools", "vc-tools.cmd"]
+      : ["vc-tools"];
+    for (const name of shimNames) {
+      await writeFile(path.join(binDir, name), "@echo current shim\n", "utf8");
+    }
+    const pkgDir = path.join(root, "@vibecodr", "cli");
+    await mkdir(pkgDir, { recursive: true });
+    await writeFile(
+      path.join(pkgDir, "package.json"),
+      JSON.stringify({ name: "@vibecodr/cli", version: "1.0.1" }),
+      "utf8"
+    );
+    const result = runWith({
+      npm_config_global: "true",
+      npm_config_prefix: prefix,
+      npm_config_local_prefix: path.join(prefix, "elsewhere"),
+      PATH: path.join(process.env["SystemRoot"] ?? "C:\\Windows", "System32")
+    });
+    assert.equal(result.code, 0, `expected exit 0, got ${result.code}; stderr:\n${result.stderr}`);
+  });
 });
