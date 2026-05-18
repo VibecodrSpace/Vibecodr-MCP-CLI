@@ -1,6 +1,6 @@
 {
   "name": "@vibecodr/cli",
-  "version": "1.0.0-rc.0",
+  "version": "1.0.0",
   "description": "The official Vibecodr CLI: hosted browser, hosted computer, capsule uploads, Pulse operations, and agent-client MCP setup under one command.",
   "license": "Apache-2.0",
   "type": "module",
