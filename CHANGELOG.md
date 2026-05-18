@@ -19,6 +19,18 @@ First release candidate of the unified Vibecodr CLI. Merges @vibecodr/vc-tools@0
 - Hosted Agent Computer commands (start, browser, computer, work, proof, usage, plans, dashboard, jobs, artifacts, agent, connect, try, etc.) now reachable from the `vibecodr` bin via legacy-dispatcher cross-routing.
 - New MCP install adapter `claude-code` (alongside codex, cursor, vscode, windsurf, claude-desktop).
 - Cloudflare worker source, wrangler config, D1 migrations, and Dockerfile vendored from vc-tools so a single repo owns the CLI and its hosted worker.
+- New canonical `VIBECDR_*` env var prefix (e.g. `VIBECDR_CONFIG_DIR`) backed by `src/core/env.ts`. Legacy `VC_TOOLS_*` and `VIBECDR_MCP_*` env vars stay readable as fallbacks; the CLI emits a one-time stderr deprecation note when a legacy var is hit. Set `VIBECDR_NO_DEPRECATION_NOTICE=1` to silence.
+
+### Behavior change on first 1.0.x run
+
+The first invocation of any v1.0.0+ bin entry runs a one-shot migration: the
+legacy `%APPDATA%\vc-tools\` and `%APPDATA%\Vibecodr\MCP\` (or platform
+equivalents) are **copied** into a unified `~/.vibecodr/{tools,mcp}/` tree,
+and the legacy roots are **renamed to `<root>.bak`**. The migration is
+idempotent (subsequent runs are no-ops) and preserves OS keychain entries
+(service IDs `@vibecodr/vc-tools` and `@vibecodr/mcp` are not touched). See
+[MIGRATION.md](MIGRATION.md#what-happens-on-first-10x-run) for the full
+breakdown and how to override the destination via `VIBECDR_CONFIG_DIR`.
 
 ### Preserved (frozen)
 

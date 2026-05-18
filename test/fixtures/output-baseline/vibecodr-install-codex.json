@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "client": "codex",
+  "scope": "user",
+  "name": "vibecodr",
+  "method": "file",
+  "changed": true,
+  "location": "<tmpdir>/config.toml",
+  "managed": true,
+  "nextStep": "Codex is configured. Codex will handle its own OAuth flow on first protected use."
+}
