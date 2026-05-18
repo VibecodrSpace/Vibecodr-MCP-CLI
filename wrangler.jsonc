@@ -1,0 +1,122 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vc-tools-api",
+  "main": "src/hosted/worker.ts",
+  "compatibility_date": "2026-05-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "routes": [
+    {
+      "pattern": "tools.vibecodr.space",
+      "custom_domain": true
+    }
+  ],
+  "triggers": {
+    "crons": ["17 */6 * * *"]
+  },
+  "vars": {
+    "VC_TOOLS_PUBLIC_BASE_URL": "https://tools.vibecodr.space",
+    "VC_TOOLS_PROVIDER_MODE": "live",
+    "VC_TOOLS_PLAN_NAME": "Creator",
+    "VC_TOOLS_HOSTED_ACCOUNT_SOFT_CAP": "24",
+    "VC_TOOLS_HOSTED_ACCOUNT_HARD_CAP": "30",
+    "VC_TOOLS_BROWSER_RUN_ACCOUNT_SOFT_CAP": "24",
+    "VC_TOOLS_BROWSER_RUN_ACCOUNT_HARD_CAP": "30",
+    "VC_TOOLS_SANDBOX_ACCOUNT_SOFT_CAP": "24",
+    "VC_TOOLS_SANDBOX_ACCOUNT_HARD_CAP": "30",
+    "VC_TOOLS_CLOUDFLARE_SPEND_SOFT_USD": "80",
+    "VC_TOOLS_CLOUDFLARE_SPEND_HARD_USD": "100",
+    "VC_TOOLS_INTERNAL_METADATA_ACTOR_IDS": "user_35SPbxey6To5mdYhdvgb3cBsMQ5"
+  },
+  "services": [
+    {
+      "binding": "VC_TOOLS_INTERNAL_API_WORKER",
+      "service": "vibecodr-internal-api"
+    }
+  ],
+  "browser": {
+    "binding": "BROWSER"
+  },
+  "workflows": [
+    {
+      "name": "vc-tools-browser-agent-task",
+      "binding": "BROWSER_AGENT_WORKFLOW",
+      "class_name": "BrowserAgentTaskWorkflow"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ARTIFACTS",
+      "bucket_name": "vc-tools-artifacts"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vc-tools-db",
+      "database_id": "e59fcf63-8999-43ff-9bbb-951f0452784e",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "JOB_QUEUE",
+        "queue": "vc-tools-jobs"
+      },
+      {
+        "binding": "JOB_DLQ",
+        "queue": "vc-tools-jobs-dlq"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "vc-tools-jobs",
+        "max_batch_size": 1,
+        "max_batch_timeout": 5,
+        "max_concurrency": 30,
+        "max_retries": 3,
+        "dead_letter_queue": "vc-tools-jobs-dlq"
+      }
+    ]
+  },
+  "containers": [
+    {
+      "class_name": "Sandbox",
+      "image": "./Dockerfile",
+      "instance_type": "standard-1",
+      "max_instances": 30
+    },
+    {
+      "class_name": "ProSandbox",
+      "image": "./Dockerfile",
+      "instance_type": "standard-2",
+      "max_instances": 30
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "Sandbox",
+        "name": "Sandbox"
+      },
+      {
+        "class_name": "ProSandbox",
+        "name": "ProSandbox"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "new_sqlite_classes": ["Sandbox"],
+      "tag": "v1"
+    },
+    {
+      "new_sqlite_classes": ["ProSandbox"],
+      "tag": "v2"
+    }
+  ]
+}

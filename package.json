@@ -6,7 +6,8 @@
   "type": "module",
   "bin": {
     "vibecodr": "dist/bin/vibecodr-mcp.js",
-    "vibecodr-mcp": "dist/bin/vibecodr-mcp.js"
+    "vibecodr-mcp": "dist/bin/vibecodr-mcp.js",
+    "vc-tools": "dist/bin/vc-tools.js"
   },
   "files": [
     "dist",
@@ -42,7 +43,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "check": "tsc -p tsconfig.json --noEmit",
+    "check": "npm run check:cli && npm run check:worker",
+    "check:cli": "tsc -p tsconfig.json --noEmit",
+    "check:worker": "tsc -p tsconfig.worker.json --noEmit",
     "test": "node --import tsx --test test/**/*.test.ts",
     "test:live-smoke": "node --import tsx --test test/live-smoke.smoke.ts",
     "test:integration:worker": "node --import tsx --test test/worker-gateway.integration.test.ts",
@@ -55,8 +58,12 @@
     "@napi-rs/keyring": "^1.3.0"
   },
   "devDependencies": {
+    "@cloudflare/puppeteer": "^1.1.0",
+    "@cloudflare/sandbox": "^0.10.0",
+    "@cloudflare/workers-types": "^4.20260511.1",
     "@types/node": "^24.7.2",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.90.0"
   }
 }
