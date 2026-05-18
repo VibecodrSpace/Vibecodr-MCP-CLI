@@ -1,4 +1,4 @@
-import { promises as fs } from "node:fs";
+import { existsSync, promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { CliError } from "../cli/errors.js";
@@ -227,6 +227,13 @@ class FileCredentialStore implements CredentialStore {
   }
 }
 
+function legacyVcToolsConfigDir(env: NodeJS.ProcessEnv): string {
+  if (process.platform === "win32") {
+    return path.join(env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming"), "vc-tools");
+  }
+  return path.join(env.XDG_CONFIG_HOME ?? path.join(os.homedir(), ".config"), "vc-tools");
+}
+
 export function resolveConfigDir(env: NodeJS.ProcessEnv, override?: string): string {
   if (override) {
     return path.resolve(override);
@@ -236,11 +243,16 @@ export function resolveConfigDir(env: NodeJS.ProcessEnv, override?: string): str
     return path.resolve(env.VC_TOOLS_CONFIG_DIR);
   }
 
-  if (process.platform === "win32") {
-    return path.join(env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming"), "vc-tools");
-  }
-
-  return path.join(env.XDG_CONFIG_HOME ?? path.join(os.homedir(), ".config"), "vc-tools");
+  // Prefer the post-merge canonical ~/.vibecodr/tools/ tree (populated by
+  // src/storage/migrate.ts) so the legacy code path stops reading from
+  // %APPDATA%\vc-tools after migration runs. Fall back to the legacy
+  // location for un-migrated users; if neither exists yet, return canonical
+  // so first-write lands there.
+  const canonical = path.join(os.homedir(), ".vibecodr", "tools");
+  if (existsSync(canonical)) return canonical;
+  const legacy = legacyVcToolsConfigDir(env);
+  if (existsSync(legacy)) return legacy;
+  return canonical;
 }
 
 function normalizeConfig(value: unknown): StoredConfig {

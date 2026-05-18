@@ -1,16 +1,17 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { CliError, EXIT_CODES } from "../cli/errors.js";
 import type { InstallManifestEntry, InstallManifestFile } from "../types/install.js";
 import { writeFileWithBackup } from "./file-lock.js";
+import { VIBECDR_MCP_HOME } from "./migrate.js";
 
 function windowsAppDataPath(): string {
   return process.env["APPDATA"] || join(homedir(), "AppData", "Roaming");
 }
 
-export function defaultInstallManifestPath(): string {
-  if (process.env["VIBECDR_MCP_INSTALL_MANIFEST_PATH"]) return process.env["VIBECDR_MCP_INSTALL_MANIFEST_PATH"];
+function legacyInstallManifestPath(): string {
   switch (process.platform) {
     case "win32":
       return join(windowsAppDataPath(), "Vibecodr", "MCP", "installs.json");
@@ -19,6 +20,15 @@ export function defaultInstallManifestPath(): string {
     default:
       return join(process.env["XDG_CONFIG_HOME"] || join(homedir(), ".config"), "vibecodr-mcp", "installs.json");
   }
+}
+
+export function defaultInstallManifestPath(): string {
+  if (process.env["VIBECDR_MCP_INSTALL_MANIFEST_PATH"]) return process.env["VIBECDR_MCP_INSTALL_MANIFEST_PATH"];
+  const canonical = join(VIBECDR_MCP_HOME, "installs.json");
+  if (existsSync(canonical)) return canonical;
+  const legacy = legacyInstallManifestPath();
+  if (existsSync(legacy)) return legacy;
+  return canonical;
 }
 
 export class InstallManifestStore {
