@@ -126,9 +126,41 @@ async function main(): Promise<void> {
       await runPulseCommand(commandArgs, context);
       return;
     default:
+      if (VC_TOOLS_ONLY_COMMANDS.has(command)) {
+        // Vibecodr v1 surfaces the hosted Agent Computer commands (browser, computer,
+        // work, etc.) through both the vibecodr and vc-tools bin names. The legacy
+        // vc-tools dispatcher owns the byte-equivalent output, so delegate to it.
+        const { runCli } = await import("../legacy/cli/run.js");
+        const code = await runCli(process.argv.slice(2));
+        process.exitCode = code;
+        return;
+      }
       throw new CliError("usage.command", `Unknown command: ${command}`, EXIT_CODES.usage);
   }
 }
+
+const VC_TOOLS_ONLY_COMMANDS = new Set<string>([
+  "start",
+  "setup",
+  "try",
+  "agent",
+  "auth",
+  "connect",
+  "computer",
+  "browser",
+  "work",
+  "proof",
+  "usage",
+  "limits",
+  "dashboard",
+  "jobs",
+  "artifacts",
+  "grants",
+  "retention",
+  "scheduled-qa",
+  "plans",
+  "inspect"
+]);
 
 main().catch((error) => {
   const { globalOptions } = parseGlobalOptions(process.argv.slice(2));

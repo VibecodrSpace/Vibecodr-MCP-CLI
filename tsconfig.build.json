@@ -2,8 +2,19 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["test/**/*.ts"]
+  "exclude": [
+    "test",
+    "test/**/*.ts",
+    "dist",
+    "dist-worker",
+    "node_modules",
+    "src/hosted/**/*.ts",
+    "worker-configuration.d.ts"
+  ]
 }

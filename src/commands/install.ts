@@ -6,11 +6,12 @@ import { installCursor } from "../clients/cursor.js";
 import { installVsCode } from "../clients/vscode.js";
 import { installWindsurf } from "../clients/windsurf.js";
 import { installClaudeDesktop } from "../clients/claude-desktop.js";
+import { installClaudeCode } from "../clients/claude-code.js";
 import { showHelpIfRequested } from "./help.js";
 import type { ClientTarget } from "../types/install.js";
 import type { CommandContext } from "./context.js";
 
-const SUPPORTED_CLIENTS: ClientTarget[] = ["codex", "cursor", "vscode", "windsurf", "claude-desktop"];
+const SUPPORTED_CLIENTS: ClientTarget[] = ["codex", "cursor", "vscode", "windsurf", "claude-desktop", "claude-code"];
 
 function defaultName(serverUrl: string): string {
   return serverUrl.includes("staging") ? "vibecodr-staging" : "vibecodr";
@@ -23,11 +24,12 @@ function clientDisplayName(client: ClientTarget): string {
     case "vscode": return "VS Code";
     case "windsurf": return "Windsurf";
     case "claude-desktop": return "Claude Desktop";
+    case "claude-code": return "Claude Code";
   }
 }
 
 export async function runInstallCommand(args: string[], context: CommandContext): Promise<void> {
-  if (showHelpIfRequested(args, context, "Usage: vibecodr install <codex|cursor|vscode|windsurf|claude-desktop> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]")) return;
+  if (showHelpIfRequested(args, context, "Usage: vibecodr install <codex|cursor|vscode|windsurf|claude-desktop|claude-code> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]")) return;
   const client = args[0] as ClientTarget | undefined;
   if (!client || !SUPPORTED_CLIENTS.includes(client)) {
     throw new CliError("usage.install_client", `Usage: install <${SUPPORTED_CLIENTS.join("|")}> [options]`, EXIT_CODES.usage);
@@ -55,7 +57,9 @@ export async function runInstallCommand(args: string[], context: CommandContext)
         ? await installVsCode(request)
         : client === "windsurf"
           ? await installWindsurf(request)
-          : await installClaudeDesktop(request);
+          : client === "claude-desktop"
+            ? await installClaudeDesktop(request)
+            : await installClaudeCode(request);
 
   if (!request.dryRun) {
     const manifest = new InstallManifestStore();

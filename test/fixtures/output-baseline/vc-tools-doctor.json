@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "data": {
+    "checks": [
+      {
+        "name": "node",
+        "ok": true,
+        "detail": "v24.14.0"
+      },
+      {
+        "name": "config",
+        "ok": true,
+        "detail": "C:\\Users\\brade\\AppData\\Roaming\\vc-tools"
+      },
+      {
+        "name": "approval",
+        "ok": true,
+        "detail": "saved for this OS user or provided by automation"
+      },
+      {
+        "name": "apiUrl",
+        "ok": true,
+        "detail": "https://tools.vibecodr.space"
+      },
+      {
+        "name": "agentComputer",
+        "ok": true,
+        "detail": "hosted Browser, Computer, Work, Proof, and Usage tools"
+      },
+      {
+        "name": "hostedApi",
+        "ok": true,
+        "detail": "vc-tools-api"
+      }
+    ],
+    "nextActions": [
+      "Connect the agent with vc-tools agent connect.",
+      "Use --json when an agent needs stable machine-readable output."
+    ]
+  },
+  "warnings": []
+}

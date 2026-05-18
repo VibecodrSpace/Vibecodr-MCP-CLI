@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "data": {
+    "plan": "Pro",
+    "monthlyCredits": {
+      "used": 42,
+      "included": 3000
+    },
+    "dailyCredits": {
+      "used": 3,
+      "included": 400
+    },
+    "runningNow": {
+      "used": 0,
+      "included": 5
+    },
+    "browserWork": {
+      "used": 31,
+      "included": 3000
+    },
+    "computerWork": {
+      "used": 11,
+      "included": 3000
+    },
+    "proofStorage": {
+      "used": 0.01,
+      "included": 10,
+      "unit": "GB"
+    }
+  },
+  "warnings": []
+}

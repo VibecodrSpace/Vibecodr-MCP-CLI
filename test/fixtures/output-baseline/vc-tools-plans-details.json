@@ -1,0 +1,158 @@
+{
+  "ok": true,
+  "data": {
+    "plans": [
+      {
+        "name": "Free",
+        "priceUsdMonthly": 0,
+        "status": "local-only",
+        "limits": {
+          "monthlyCredits": 30,
+          "dailyCredits": 10,
+          "maxConcurrentRuns": 1,
+          "browser": {
+            "defaultLane": "quick-action",
+            "monthlyBrowserSeconds": 1800,
+            "dailyBrowserSeconds": 600,
+            "maxBrowserSecondsPerRun": 30,
+            "allowBrowserSessions": false,
+            "maxBrowserSessionSeconds": 0,
+            "maxConcurrentBrowserSessionsPerUser": 0
+          },
+          "crawl": {
+            "maxPagesPerRun": 10,
+            "maxPagesPerMonth": 25,
+            "maxDepth": 1
+          },
+          "scheduledQa": {
+            "maxRunsPerMonth": 0,
+            "minIntervalMinutes": 0
+          },
+          "sandbox": {
+            "containerInstanceType": "none",
+            "maxSandboxTaskSeconds": 0
+          },
+          "browserRenderJobsMonthly": 30,
+          "browserMinutesMonthly": 30,
+          "sandboxJobsMonthly": 0,
+          "sandboxMinutesMonthly": 0,
+          "artifactStorageGb": 0,
+          "artifactRetentionDays": 0,
+          "maxArtifactUploadBytes": 0,
+          "concurrentBrowserSessions": 0,
+          "concurrentSandboxJobs": 0
+        },
+        "posture": {
+          "authenticatedBrowsing": "disabled",
+          "browserRecording": "disabled",
+          "sandboxNetwork": "disabled",
+          "crawl": "disabled",
+          "spendCap": "not-applicable"
+        }
+      },
+      {
+        "name": "Creator",
+        "priceUsdMonthly": 19,
+        "limits": {
+          "monthlyCredits": 600,
+          "dailyCredits": 90,
+          "maxConcurrentRuns": 2,
+          "browser": {
+            "defaultLane": "quick-action",
+            "monthlyBrowserSeconds": 36000,
+            "dailyBrowserSeconds": 5400,
+            "maxBrowserSecondsPerRun": 60,
+            "allowBrowserSessions": true,
+            "maxBrowserSessionSeconds": 1200,
+            "maxConcurrentBrowserSessionsPerUser": 1
+          },
+          "crawl": {
+            "maxPagesPerRun": 50,
+            "maxPagesPerMonth": 500,
+            "maxDepth": 2
+          },
+          "scheduledQa": {
+            "maxRunsPerMonth": 30,
+            "minIntervalMinutes": 720
+          },
+          "sandbox": {
+            "containerInstanceType": "standard-1",
+            "maxSandboxTaskSeconds": 600
+          },
+          "browserRenderJobsMonthly": 600,
+          "browserMinutesMonthly": 600,
+          "sandboxJobsMonthly": 600,
+          "sandboxMinutesMonthly": 600,
+          "artifactStorageGb": 1,
+          "artifactRetentionDays": 7,
+          "maxArtifactUploadBytes": 104857600,
+          "concurrentBrowserSessions": 1,
+          "concurrentSandboxJobs": 2
+        },
+        "posture": {
+          "authenticatedBrowsing": "disabled",
+          "browserRecording": "disabled",
+          "sandboxNetwork": "public-egress-private-deny",
+          "crawl": "disabled-or-limited",
+          "spendCap": "hard-by-default"
+        }
+      },
+      {
+        "name": "Pro",
+        "priceUsdMonthly": 39,
+        "limits": {
+          "monthlyCredits": 3000,
+          "dailyCredits": 400,
+          "maxConcurrentRuns": 5,
+          "browser": {
+            "defaultLane": "quick-action",
+            "monthlyBrowserSeconds": 180000,
+            "dailyBrowserSeconds": 24000,
+            "maxBrowserSecondsPerRun": 180,
+            "allowBrowserSessions": true,
+            "maxBrowserSessionSeconds": 3600,
+            "maxConcurrentBrowserSessionsPerUser": 1
+          },
+          "crawl": {
+            "maxPagesPerRun": 250,
+            "maxPagesPerMonth": 5000,
+            "maxDepth": 4
+          },
+          "scheduledQa": {
+            "maxRunsPerMonth": 300,
+            "minIntervalMinutes": 60
+          },
+          "sandbox": {
+            "containerInstanceType": "standard-2",
+            "maxSandboxTaskSeconds": 1800
+          },
+          "browserRenderJobsMonthly": 3000,
+          "browserMinutesMonthly": 3000,
+          "sandboxJobsMonthly": 3000,
+          "sandboxMinutesMonthly": 3000,
+          "artifactStorageGb": 10,
+          "artifactRetentionDays": 30,
+          "maxArtifactUploadBytes": 524288000,
+          "concurrentBrowserSessions": 1,
+          "concurrentSandboxJobs": 2
+        },
+        "posture": {
+          "authenticatedBrowsing": "allowlisted-beta",
+          "browserRecording": "opt-in",
+          "sandboxNetwork": "public-egress-private-deny",
+          "crawl": "add-on-or-limited",
+          "spendCap": "soft-with-warnings"
+        }
+      }
+    ],
+    "authority": {
+      "source": "hosted-plans-endpoint",
+      "accountEntitlementsAuthoritative": false,
+      "localFallbackAuthoritative": false,
+      "accountStateEndpoint": "/v1/usage",
+      "enforcement": "server-side",
+      "message": "Plan packaging is informational. Authenticated /v1/usage plus hosted quota checks decide real account entitlement, usage, billing, and enforcement."
+    }
+  },
+  "warnings": []
+}

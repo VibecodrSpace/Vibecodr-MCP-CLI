@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-worker/
+.wrangler/
 .env
 .env.local
 .env.*
@@ -17,5 +19,7 @@ npm-debug.log*
 *.log
 *.tmp
 *.bak
+tmp/
 tmp-*/
 *scratch*
+.vc-tools-test/

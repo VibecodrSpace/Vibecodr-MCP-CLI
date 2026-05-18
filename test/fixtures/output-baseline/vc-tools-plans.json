@@ -1,0 +1,63 @@
+{
+  "ok": true,
+  "data": {
+    "plans": [
+      {
+        "name": "Free",
+        "priceUsdMonthly": 0,
+        "monthlyCredits": 30,
+        "dailyCredits": 10,
+        "runningLimit": 1,
+        "browser": {
+          "monthlyJobs": 30,
+          "maxSecondsPerRun": 30,
+          "agentBrowserTasks": "not included"
+        },
+        "computer": {
+          "monthlyJobs": 0,
+          "maxTaskSeconds": 0,
+          "publicHttpEgress": "not included"
+        },
+        "proofStorageGb": 0
+      },
+      {
+        "name": "Creator",
+        "priceUsdMonthly": 19,
+        "monthlyCredits": 600,
+        "dailyCredits": 90,
+        "runningLimit": 2,
+        "browser": {
+          "monthlyJobs": 600,
+          "maxSecondsPerRun": 60,
+          "agentBrowserTasks": "included"
+        },
+        "computer": {
+          "monthlyJobs": 600,
+          "maxTaskSeconds": 600,
+          "publicHttpEgress": "available"
+        },
+        "proofStorageGb": 1
+      },
+      {
+        "name": "Pro",
+        "priceUsdMonthly": 39,
+        "monthlyCredits": 3000,
+        "dailyCredits": 400,
+        "runningLimit": 5,
+        "browser": {
+          "monthlyJobs": 3000,
+          "maxSecondsPerRun": 180,
+          "agentBrowserTasks": "included"
+        },
+        "computer": {
+          "monthlyJobs": 3000,
+          "maxTaskSeconds": 1800,
+          "publicHttpEgress": "available"
+        },
+        "proofStorageGb": 10
+      }
+    ],
+    "note": "Plan packaging is public product information. Use vc-tools usage for your actual account capacity."
+  },
+  "warnings": []
+}

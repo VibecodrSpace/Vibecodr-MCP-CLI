@@ -1,73 +1,89 @@
-# ACTIVE DEVELOPMENT - USE AT YOUR OWN RISK #
-
-
-
-
 # Vibecodr CLI
 
-Direct terminal client for the hosted Vibecodr MCP server.
+[![npm](https://img.shields.io/npm/v/@vibecodr/cli.svg)](https://npmjs.com/package/@vibecodr/cli)
 
-This repository is intentionally separate from the PolyForm-licensed server implementation. The CLI is a client and installer surface, not a second server. It talks to the same hosted Vibecodr MCP gateway used by Codex, Cursor, VS Code, Windsurf, ChatGPT, and other MCP-capable clients.
+The official Vibecodr CLI. One package, one install command, one coherent surface for:
 
-The CLI is the permissively licensed public client surface for:
+- Hosted browser tools (render, screenshot, PDF, crawl, snapshot, ask).
+- Hosted computer tools (run, test, work follow, work submit, proof).
+- Capsule uploads (zip + image) into Pulse and the hosted MCP gateway.
+- Pulse lifecycle (setup, publish, list, get, status, run, archive, restore, create, deploy).
+- Agent-client MCP installation (Codex, Cursor, VS Code, Windsurf, Claude Desktop, Claude Code).
+- Direct OAuth login, device-code login, status, doctor, diagnostics.
 
-- direct CLI OAuth login
-- live MCP tool discovery
-- live MCP tool invocation
-- direct-to-R2 staged ZIP and image uploads without base64 payloads
-- environment and auth diagnostics
-- thin client install and uninstall adapters
+## Install
 
-Currently implemented command surface:
+```bash
+npm install -g @vibecodr/cli
+```
 
-- `login`
-- `logout`
-- `status`
-- `whoami`
-- `tools`
-- `call`
-- `upload`
-- `pulse-setup`
-- `pulse-publish`
-- `pulse`
-- `doctor`
-- `config`
-- `install`
-- `uninstall`
+This installs three bin entries that all point at the same dispatcher:
 
-Primary executable:
+- `vibecodr` — canonical name. The full unified command surface.
+- `vibecodr-mcp` — compatibility alias for users coming from `@vibecodr/cli@0.2.x`.
+- `vc-tools` — compatibility alias for users coming from `@vibecodr/vc-tools@0.1.x`. Produces byte-equivalent output to the standalone vc-tools binary on every hosted Agent Computer command.
 
-- `vibecodr`
+You can also install the legacy tombstone package; it forwards to the same dispatcher:
 
-Compatibility alias:
+```bash
+npm install -g @vibecodr/vc-tools
+```
 
-- `vibecodr-mcp`
+Pin to a specific version (recommended for CI):
 
-Published package:
+```bash
+npm install -g @vibecodr/cli@1.0.0
+```
 
-- `@vibecodr/cli`
+## Quick start
 
-Legacy package compatibility:
+```bash
+# 1. Authenticate against the hosted Agent Computer (tools.vibecodr.space).
+vibecodr start
 
-- `@vibecodr/mcp`
+# 2. Tell your agent client how to find the hosted MCP gateway (openai.vibecodr.space/mcp).
+vibecodr connect --client codex
 
-The runtime path talks directly to `https://openai.vibecodr.space/mcp`. Editor installers are not part of the runtime path.
+# 3. Smoke-test the connection.
+vibecodr computer status
+vibecodr browser screenshot https://example.com --out ./proof
+```
 
-CLI login authenticates this CLI only. It does not share token storage with Codex, Cursor, VS Code, Windsurf, ChatGPT, or other MCP clients; those clients own their own OAuth sessions against the same server.
+## Surfaces
 
-The official production auth path is now committed in package code through the server-hosted client metadata document:
+The CLI talks to two hosted endpoints. Every command targets exactly one of them:
 
-- `https://openai.vibecodr.space/.well-known/oauth-client/vibecodr-mcp.json`
+| Endpoint | Commands |
+|---|---|
+| `tools.vibecodr.space` | `start`, `setup`, `agent`, `connect`, `try`, `browser`, `computer`, `work`, `proof`, `jobs`, `artifacts`, `usage`, `limits`, `grants`, `retention`, `scheduled-qa`, `plans`, `dashboard`, `inspect` |
+| `openai.vibecodr.space/mcp` | `tools`, `call`, `upload`, `pulse`, `pulse-setup`, `pulse-publish` |
+| Both | `login`, `logout`, `status`, `whoami`, `doctor`, `install`, `uninstall`, `config` |
 
-Pulse lifecycle commands use the hosted MCP gateway as the authority boundary. The CLI redacts source, descriptor, token, secret, and inline file-content fields from local output while preserving safe operator handles and counters such as `artifactId`, `jobId`, `requestId`, `traceId`, `errorCode`, `credentialType`, `tokenCount`, and `tokenKind`; the server still enforces OAuth, owner scoping, confirmation, no-delete policy, and model-safe response shaping for direct MCP callers.
+CLI auth is independent of the auth your editor (Codex, Cursor, VS Code, Windsurf, Claude Desktop, Claude Code) negotiates with the gateway; each client owns its own session.
 
-Documentation:
+## Migrating from `@vibecodr/vc-tools@0.1.x` or `@vibecodr/cli@0.2.x`
 
-- [docs/auth.md](docs/auth.md)
-- [docs/architecture.md](docs/architecture.md)
-- [docs/install.md](docs/install.md)
-- [docs/clients.md](docs/clients.md)
-- [docs/commands.md](docs/commands.md)
-- [docs/troubleshooting.md](docs/troubleshooting.md)
-- [docs/contributors.md](docs/contributors.md)
-- [docs/licensing.md](docs/licensing.md)
+You should not need to change anything. Every bin name, env var prefix (`VC_TOOLS_*`, `VIBECDR_MCP_*`), keyring service ID (`@vibecodr/vc-tools`, `@vibecodr/mcp`), config dir, Cloudflare worker route, JWT claim, page slug, and durable API key remains addressable. See [MIGRATION.md](MIGRATION.md) for the three-section breakdown.
+
+## Documentation
+
+- [docs/auth.md](docs/auth.md) — auth flows, env vars, profiles.
+- [docs/architecture.md](docs/architecture.md) — endpoints, surfaces, contract boundaries.
+- [docs/install.md](docs/install.md) — agent-client install adapters.
+- [docs/clients.md](docs/clients.md) — Codex, Cursor, VS Code, Windsurf, Claude Desktop, Claude Code.
+- [docs/commands.md](docs/commands.md) — command reference.
+- [docs/troubleshooting.md](docs/troubleshooting.md) — common error codes.
+- [docs/contributors.md](docs/contributors.md) — repo layout and dev loop.
+- [docs/licensing.md](docs/licensing.md) — Apache-2.0 details.
+- [docs/API-CONTRACT.md](docs/API-CONTRACT.md) — hosted worker contract.
+- [docs/SECURITY.md](docs/SECURITY.md) — trust boundary.
+- [docs/VALIDATION-MATRIX.md](docs/VALIDATION-MATRIX.md) — goal coverage map.
+
+## Repository status
+
+This repository is the unified home of the Vibecodr CLI. It ships:
+
+- The published npm package `@vibecodr/cli`.
+- The Cloudflare worker source for `tools.vibecodr.space` (in `src/hosted/`) and the matching D1 migrations (in `migrations/`).
+
+Apache-2.0 licensed.

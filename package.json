@@ -1,40 +1,70 @@
 {
   "name": "@vibecodr/cli",
-  "version": "0.2.11",
-  "description": "Vibecodr CLI for login, live MCP tool discovery, and live tool invocation.",
+  "version": "1.0.0-rc.0",
+  "description": "The official Vibecodr CLI: hosted browser, hosted computer, capsule uploads, Pulse operations, and agent-client MCP setup under one command.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
+    "vibecodr": "dist/bin/vibecodr-mcp.js",
     "vibecodr-mcp": "dist/bin/vibecodr-mcp.js",
-    "vibecodr": "dist/bin/vibecodr-mcp.js"
+    "vc-tools": "dist/bin/vc-tools.js"
   },
   "files": [
     "dist",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
+    "MIGRATION.md",
     "docs"
   ],
   "engines": {
     "node": ">=22 <26"
   },
+  "keywords": [
+    "vibecodr",
+    "cli",
+    "mcp",
+    "model-context-protocol",
+    "agent-computer",
+    "browser-automation",
+    "cloudflare",
+    "sandbox"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BradenHartsell/Vibecodr-CLI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BradenHartsell/Vibecodr-CLI/issues"
+  },
+  "homepage": "https://vibecodr.space/vc-tools",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "check": "tsc -p tsconfig.json --noEmit",
+    "check": "npm run check:cli && npm run check:worker",
+    "check:cli": "tsc -p tsconfig.json --noEmit",
+    "check:worker": "tsc -p tsconfig.worker.json --noEmit",
     "test": "node --import tsx --test test/**/*.test.ts",
     "test:live-smoke": "node --import tsx --test test/live-smoke.smoke.ts",
     "test:integration:worker": "node --import tsx --test test/worker-gateway.integration.test.ts",
     "verify:artifact": "node scripts/check-pack-artifact.mjs",
-    "verify": "npm run check && npm test && npm run build && npm run verify:artifact"
+    "verify": "npm run check && npm run build && npm test && npm run verify:artifact"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.27.1",
-    "@napi-rs/keyring": "^1.2.0"
+    "@napi-rs/keyring": "^1.3.0"
   },
   "devDependencies": {
+    "@cloudflare/puppeteer": "^1.1.0",
+    "@cloudflare/sandbox": "^0.10.0",
+    "@cloudflare/workers-types": "^4.20260511.1",
     "@types/node": "^24.7.2",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.90.0"
   }
 }

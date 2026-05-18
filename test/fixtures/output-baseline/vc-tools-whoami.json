@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "data": {
+    "user": {
+      "id": "user_35SPbxey6To5mdYhdvgb3cBsMQ5"
+    },
+    "workspace": {
+      "id": "user_35SPbxey6To5mdYhdvgb3cBsMQ5",
+      "name": "vc-tools workspace"
+    },
+    "plan": {
+      "name": "Pro"
+    }
+  },
+  "warnings": []
+}

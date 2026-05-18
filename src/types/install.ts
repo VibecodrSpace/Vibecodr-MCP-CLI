@@ -1,4 +1,4 @@
-export type ClientTarget = "codex" | "cursor" | "vscode" | "windsurf" | "claude-desktop";
+export type ClientTarget = "codex" | "cursor" | "vscode" | "windsurf" | "claude-desktop" | "claude-code";
 
 export interface InstallManifestEntry {
   client: ClientTarget;

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "error": {
+    "code": "mcp.whoami_contract",
+    "message": "The MCP gateway did not return account identity for the connected user.",
+    "nextStep": "Run vibecodr doctor, then retry vibecodr whoami."
+  }
+}

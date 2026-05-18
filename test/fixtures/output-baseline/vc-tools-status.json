@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "data": {
+    "apiUrl": "https://tools.vibecodr.space",
+    "config": {
+      "dir": "C:\\Users\\brade\\AppData\\Roaming\\vc-tools",
+      "configExists": true,
+      "credentialsExist": true,
+      "credentialStore": "native",
+      "dirSource": "default"
+    },
+    "authSources": {
+      "envOverrides": [],
+      "stored": {
+        "status": "present",
+        "credentialStore": "native",
+        "credentialMode": "[redacted]",
+        "grantStatus": "fresh",
+        "refreshable": true
+      },
+      "winning": {
+        "mode": "api_key",
+        "source": "native",
+        "label": "stored API key",
+        "kind": "stored"
+      },
+      "ambiguous": false
+    },
+    "authenticated": true,
+    "health": {
+      "ok": true,
+      "service": "vc-tools-api",
+      "live": {
+        "configured": true,
+        "dnsPreflight": true,
+        "network": {
+          "browserPublicHttps": "available",
+          "computerPublicHttps": "available",
+          "privateLocalNetworks": "blocked",
+          "metadataServices": "blocked",
+          "rawNetwork": "restricted"
+        }
+      },
+      "version": "0.1.4",
+      "requestId": "0cdabbec-c440-4d3a-a1c3-1def6055ca6e"
+    }
+  },
+  "warnings": []
+}
