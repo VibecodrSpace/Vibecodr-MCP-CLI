@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "data": {
+    "ready": true,
+    "loginStarted": true,
+    "account": {
+      "label": "builder@example.com",
+      "workspace": "Vibecodr",
+      "plan": "Pro"
+    },
+    "connection": {
+      "transport": "streamable_http",
+      "url": "https://tools.vibecodr.space/mcp"
+    },
+    "health": {
+      "ok": true,
+      "service": "vc-tools-api",
+      "network": {
+        "browserPublicHttps": "available",
+        "computerPublicHttps": "available",
+        "privateLocalNetworks": "blocked",
+        "metadataServices": "blocked",
+        "rawNetwork": "restricted"
+      }
+    },
+    "usage": {
+      "plan": "Pro"
+    },
+    "nextActions": [
+      "Connect your agent with vc-tools agent connect --client codex.",
+      "Run vc-tools try to prove browser, computer, and proof are working."
+    ]
+  },
+  "warnings": []
+}

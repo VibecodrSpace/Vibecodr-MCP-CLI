@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "data": {
+    "checks": [
+      {
+        "name": "node",
+        "ok": true,
+        "detail": "<machine-specific; redacted in fixture>"
+      },
+      {
+        "name": "config",
+        "ok": true,
+        "detail": "<machine-specific; redacted in fixture>"
+      },
+      {
+        "name": "approval",
+        "ok": false,
+        "detail": "missing; run vc-tools start"
+      },
+      {
+        "name": "apiUrl",
+        "ok": true,
+        "detail": "https://tools.vibecodr.space"
+      },
+      {
+        "name": "agentComputer",
+        "ok": true,
+        "detail": "hosted Browser, Computer, Work, Proof, and Usage tools"
+      },
+      {
+        "name": "hostedApi",
+        "ok": true,
+        "detail": "vc-tools-api"
+      }
+    ],
+    "nextActions": [
+      "Run vc-tools start.",
+      "If this is CI or an isolated agent, use an advanced file/stdin credential source."
+    ]
+  },
+  "warnings": []
+}

@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "data": {
+    "apiUrl": "https://tools.vibecodr.space",
+    "config": {
+      "dir": "<machine-specific; redacted in fixture>",
+      "configExists": false,
+      "credentialsExist": false,
+      "credentialStore": "file",
+      "dirSource": "VC_TOOLS_CONFIG_DIR",
+      "defaultDir": "C:\\Users\\brade\\.vibecodr\\tools",
+      "defaultConfigExists": true,
+      "defaultCredentialsExist": "[redacted]"
+    },
+    "authSources": {
+      "envOverrides": [],
+      "stored": {
+        "status": "missing",
+        "credentialStore": "file",
+        "credentialMode": "[redacted]",
+        "grantStatus": "missing",
+        "refreshable": false
+      },
+      "ambiguous": false
+    },
+    "authenticated": false
+  },
+  "warnings": [
+    "VC_TOOLS_CONFIG_DIR is set, so this session is isolated from the normal vc-tools config directory.",
+    "No mock route for GET /v1/health"
+  ]
+}

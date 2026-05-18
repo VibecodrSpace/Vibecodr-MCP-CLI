@@ -115,11 +115,156 @@ test("baseline: dashboard --json", async () => {
   }
 });
 
-// doctor --json is intentionally NOT in the baseline contract: its output
-// includes node version + tmp config-dir path which aren't byte-portable
-// across machines. cli.behavior.test.ts already exercises doctor under
-// several conditions; the shape stability of its checks[] array is covered
-// there.
+// doctor's output is mostly stable but the `node` and `config` checks
+// include the running node version and the (random) tmp config-dir path
+// runWithMockApi creates per-call. A check-name-aware filter erases the
+// `detail` field for those two known cases so the rest of the shape (which
+// checks ran + their ok flags + their stable-detail strings) stays in the
+// regression contract.
+function filterDoctorChecks(value: unknown): unknown {
+  const filtered = filterVolatile(value) as { data?: { checks?: Array<Record<string, unknown>> } };
+  const checks = filtered?.data?.checks;
+  if (Array.isArray(checks)) {
+    for (const check of checks) {
+      const name = check["name"];
+      if (name === "node" || name === "config") {
+        check["detail"] = "<machine-specific; redacted in fixture>";
+      }
+    }
+  }
+  return filtered;
+}
+
+test("baseline: doctor --json (machine-specific detail strings redacted)", async () => {
+  const result = await runWithMockApi(["--json", "doctor"], [
+    {
+      method: "GET",
+      path: "/v1/health",
+      response: {
+        ok: true,
+        service: "vc-tools-api",
+        live: {
+          configured: true,
+          dnsPreflight: true,
+          network: {
+            browserPublicHttps: "available",
+            computerPublicHttps: "available",
+            privateLocalNetworks: "blocked",
+            metadataServices: "blocked",
+            rawNetwork: "restricted"
+          }
+        }
+      }
+    }
+  ]);
+  try {
+    assert.equal(result.code, 0);
+    const payload = JSON.parse(result.stdout);
+    await assertOrWriteFixture("vc-tools-doctor.json", filterDoctorChecks(payload));
+  } finally {
+    await result.cleanup();
+  }
+});
+
+test("baseline: status --json (with mocked /v1/health, unauthenticated)", async () => {
+  const result = await runWithMockApi(["--json", "status"], [
+    { method: "GET", path: "/health", response: { ok: true, service: "vc-tools-api" } }
+  ]);
+  try {
+    assert.equal(result.code, 0);
+    const payload = JSON.parse(result.stdout);
+    // The status payload includes the config dir path under data.config.dir;
+    // erase it before fixture assertion so the test stays cross-machine.
+    const filtered = filterVolatile(payload) as { data?: { config?: Record<string, unknown> } };
+    if (filtered.data?.config) filtered.data.config = { ...filtered.data.config, dir: "<machine-specific; redacted in fixture>" };
+    await assertOrWriteFixture("vc-tools-status.json", filtered);
+  } finally {
+    await result.cleanup();
+  }
+});
+
+test("baseline: work follow job_test --no-wait --json (mocked terminal job)", async () => {
+  const token = "vct_test_grant_token_1234567890";
+  const result = await runWithMockApi(
+    ["--json", "--token", token, "work", "follow", "job_test", "--no-wait"],
+    [
+      {
+        method: "GET",
+        path: "/v1/jobs/job_test",
+        response: {
+          id: "job_test",
+          status: "completed",
+          capability: "browser.screenshot_url",
+          result: { artifactId: "art_test_1234567890" }
+        }
+      }
+    ]
+  );
+  try {
+    assert.equal(result.code, 0, `work follow failed:\n${result.stderr}`);
+    const payload = JSON.parse(result.stdout);
+    await assertOrWriteFixture("vc-tools-work-follow.json", filterVolatile(payload));
+  } finally {
+    await result.cleanup();
+  }
+});
+
+test("baseline: start --json (full device-code + handshake chain)", async () => {
+  const grantToken = "vct_grant_baseline_1234567890";
+  const apiKey = "ak_live_baseline_1234567890";
+  const result = await runWithMockApi(
+    ["--json", "start", "--client", "codex"],
+    [
+      {
+        method: "POST",
+        path: "/auth/vc-tools/device/start",
+        response: {
+          device_code: "vctd_baseline_device_secret_1234567890",
+          user_code: "BASE-LINE",
+          verification_uri: "https://vibecodr.space/settings/vc-tools/approve",
+          verification_uri_complete: "https://vibecodr.space/settings/vc-tools/approve?vc_tools_code=BASE-LINE",
+          expires_at: 1_900_000_000,
+          interval: 0
+        }
+      },
+      {
+        method: "POST",
+        path: "/auth/vc-tools/device/token",
+        response: {
+          token_type: "Bearer",
+          access_token: grantToken,
+          expires_at: 1_900_000_000,
+          user_id: "user_baseline",
+          credential_type: "browser_device",
+          grant_profile: "vc_tools",
+          scopes: ["vc-tools:use", "vc-tools:*"],
+          durable_credential: {
+            type: "api_key",
+            id: "ak_baseline_device_1",
+            name: "vc-tools Agent Computer",
+            expires_at: 1_900_000_000,
+            api_key: apiKey
+          }
+        }
+      },
+      meRoute(),
+      { method: "GET", path: "/v1/health", response: { ok: true, service: "vc-tools-api" } },
+      { method: "GET", path: "/v1/mcp/connection", response: { client: "codex", url: "https://tools.vibecodr.space/mcp" } },
+      { method: "GET", path: "/v1/usage", response: { plan: "Pro" } }
+    ],
+    { env: { VC_TOOLS_BROWSER_OPEN: "false" } }
+  );
+  try {
+    assert.equal(result.code, 0, `start failed:\n${result.stderr}`);
+    const payload = JSON.parse(result.stdout);
+    // The start payload echoes back the device code + verification URLs;
+    // those are stable across mocked runs because the mock returns fixed
+    // strings, so no extra filter beyond filterVolatile is needed.
+    await assertOrWriteFixture("vc-tools-start.json", filterVolatile(payload));
+  } finally {
+    await result.cleanup();
+  }
+});
 
 test("baseline: whoami --json (with mocked /v1/me + seeded credential)", async () => {
   const token = "vct_test_grant_token_1234567890";
