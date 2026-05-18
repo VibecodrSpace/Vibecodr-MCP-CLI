@@ -32,8 +32,9 @@ function readNullableString(value: unknown): string | null | undefined {
 
 function profileFromToolResult(result: Awaited<ReturnType<CommandContext["runtimeClient"]["callTool"]>>): AccountProfile {
   const structured = readRecord(result.structuredContent);
-  const profile = readRecord(structured["profile"]);
-  const quota = readRecord(structured["quota"]);
+  const account = readRecord(structured["account"]);
+  const profile = readRecord(account["profile"]);
+  const quota = readRecord(account["quota"]);
   return {
     ...(readString(profile["id"]) ? { id: readString(profile["id"]) } : {}),
     ...(readString(profile["handle"]) ? { handle: readString(profile["handle"]) } : {}),

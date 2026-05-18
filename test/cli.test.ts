@@ -192,18 +192,20 @@ test("whoami prints the connected account from account capabilities without dump
           assert.deepEqual(input, {});
           return {
             structuredContent: {
-              profile: {
-                id: "user_123",
-                handle: "vibecodr",
-                name: "Vibecodr",
-                avatarUrl: "https://example.test/avatar.png"
-              },
-              quota: {
-                plan: "Pro",
-                usage: { storage: 1 },
-                limits: { internalOnly: "not for whoami" }
-              },
-              recommendations: ["keep this out of whoami"]
+              account: {
+                profile: {
+                  id: "user_123",
+                  handle: "vibecodr",
+                  name: "Vibecodr",
+                  avatarUrl: "https://example.test/avatar.png"
+                },
+                quota: {
+                  plan: "Pro",
+                  usage: { storage: 1 },
+                  limits: { internalOnly: "not for whoami" }
+                },
+                recommendations: ["keep this out of whoami"]
+              }
             }
           };
         }
