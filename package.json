@@ -39,8 +39,7 @@
   },
   "homepage": "https://vibecodr.space/vc-tools",
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
