@@ -2341,9 +2341,13 @@ async function executeBrowserAgentTaskJob(job: ToolJobMessage, live: RequiredLiv
         actionLog.push({ ...performed, atMs: Date.now() - startedMs });
         if (action.action !== "wait") {
           lastMeaningfulAt = Date.now();
-        } else if (Date.now() - lastMeaningfulAt >= idleTimeoutMs) {
-          closureReason = "idle_timeout";
-          break;
+        } else {
+          // Account waits against the idle budget by their planned duration. Date.now() across a setTimeout disagrees by up to ~15 ms on Windows (system clock tick), making `>= idleTimeoutMs` flaky.
+          const plannedSleepMs = typeof (performed as { ms?: unknown }).ms === "number" ? (performed as { ms: number }).ms : 0;
+          if ((now - lastMeaningfulAt) + plannedSleepMs >= idleTimeoutMs) {
+            closureReason = "idle_timeout";
+            break;
+          }
         }
       } catch (error) {
         closureReason = "action_failed";
