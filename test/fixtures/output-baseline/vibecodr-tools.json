@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "serverUrl": "https://openai.vibecodr.space/mcp",
+  "toolCount": 2,
+  "tools": [
+    {
+      "name": "get_vibecodr_platform_overview",
+      "description": "Return a structured overview of the Vibecodr platform surface.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "quick_publish_creation",
+      "description": "Publish a small piece of source as a runnable Vibecodr creation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "payload"
+        ]
+      }
+    }
+  ]
+}
