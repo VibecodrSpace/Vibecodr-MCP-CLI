@@ -4,7 +4,7 @@ import process from "node:process";
 
 const root = process.cwd();
 const channel = process.env.VC_TOOLS_RELEASE_CHANNEL ?? "cli-contract";
-const moduleUrl = pathToFileURL(path.join(root, "dist", "core", "goal-coverage.js"));
+const moduleUrl = pathToFileURL(path.join(root, "dist", "legacy", "core", "goal-coverage.js"));
 const { GOAL_INSPECTIONS, goalCoverageSummary } = await import(moduleUrl.href);
 
 const summary = goalCoverageSummary();
