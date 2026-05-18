@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   mirror:
-    if: github.repository == 'BradenHartsell/Vibecodr-MCP-CLI'
+    if: github.repository == 'BradenHartsell/Vibecodr-CLI'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -33,7 +33,7 @@ jobs:
           client-id: ${{ vars.VIBECODRSPACE_MIRROR_APP_CLIENT_ID }}
           private-key: ${{ secrets.VIBECODRSPACE_MIRROR_APP_PRIVATE_KEY }}
           owner: VibecodrSpace
-          repositories: Vibecodr-MCP-CLI
+          repositories: Vibecodr-CLI
           permission-contents: write
           permission-workflows: write
 
@@ -50,7 +50,7 @@ jobs:
           fi
 
           git fetch origin +refs/heads/main:refs/remotes/origin/main +refs/tags/*:refs/tags/*
-          git remote add mirror "https://x-access-token:${VIBECODRSPACE_MIRROR_TOKEN}@github.com/VibecodrSpace/Vibecodr-MCP-CLI.git"
+          git remote add mirror "https://x-access-token:${VIBECODRSPACE_MIRROR_TOKEN}@github.com/VibecodrSpace/Vibecodr-CLI.git"
           trap 'git remote remove mirror >/dev/null 2>&1 || true' EXIT
 
           git push mirror refs/remotes/origin/main:refs/heads/main
