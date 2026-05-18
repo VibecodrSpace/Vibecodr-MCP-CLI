@@ -25,7 +25,11 @@ export async function installClaudeCode(request: InstallRequest): Promise<Instal
       changed: false,
       location: spawnLocation(),
       managed: true,
-      nextStep: "Dry run: would call `claude mcp add --transport http <name> <serverUrl>` to register the Agent Computer."
+      nextStep: "Dry run: would call `claude mcp add --transport http <name> <serverUrl>` to register the Agent Computer.",
+      spawn: {
+        command: CLAUDE_BINARY,
+        args: ["mcp", "add", "--transport", "http", request.name, request.serverUrl]
+      }
     };
   }
   if (!commandExists(CLAUDE_BINARY)) {

@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "test-server": {
+      "url": "https://example.test/mcp"
+    }
+  }
+}
