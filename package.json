@@ -1,6 +1,6 @@
 {
   "name": "@vibecodr/cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The official Vibecodr CLI: hosted browser, hosted computer, capsule uploads, Pulse operations, and agent-client MCP setup under one command.",
   "license": "Apache-2.0",
   "type": "module",
@@ -15,7 +15,8 @@
     "LICENSE",
     "CHANGELOG.md",
     "MIGRATION.md",
-    "docs"
+    "docs",
+    "preinstall-check.mjs"
   ],
   "engines": {
     "node": ">=22 <26"
@@ -42,6 +43,7 @@
     "access": "public"
   },
   "scripts": {
+    "preinstall": "node preinstall-check.mjs",
     "build": "tsc -p tsconfig.build.json",
     "check": "npm run check:cli && npm run check:worker",
     "check:cli": "tsc -p tsconfig.json --noEmit",

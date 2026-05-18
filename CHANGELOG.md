@@ -2,6 +2,15 @@
 
 Pre-1.0.0 history for the `@vibecodr/cli@0.2.x` and `0.1.x` lines lives at [`docs/legacy/CHANGELOG-mcp-cli.md`](docs/legacy/CHANGELOG-mcp-cli.md). The `@vibecodr/vc-tools@0.1.x` line was the other half of the May 2026 merge; its source history is preserved in the archived [`BradenHartsell/vc-tools`](https://github.com/BradenHartsell/vc-tools) repository.
 
+## 1.0.1
+
+Fixes the global-install collision for users who already had `@vibecodr/vc-tools@0.1.x` installed globally. Both packages register a `vc-tools` bin under the same path; npm refuses to overwrite a bin owned by a different package, so the install fails with `EEXIST: file already exists`.
+
+- Adds a `preinstall` lifecycle script (`preinstall-check.mjs`) that runs `npm ls -g --depth 0 --json @vibecodr/vc-tools` before file copy. When a legacy `0.1.x` is detected, the install aborts with a clear actionable message listing the two-command fix (`npm uninstall -g @vibecodr/vc-tools` followed by `npm install -g @vibecodr/cli`). The check is purely read-only, opts itself out during local dev installs from the source repo, and honors `VIBECDR_SKIP_PREINSTALL_CHECK=1` for operators who want to bypass.
+- Documents the collision and the unblock recipe in MIGRATION.md under the "If you used `vc-tools`" section.
+
+No source or behavior changes to the dispatcher, the worker, or the published bins. The only delta in the tarball is the new `preinstall-check.mjs` at the package root.
+
 ## 1.0.0
 
 Same source as 1.0.0-rc.0. Promoted to `latest` after the rc.0 release cleared smoke against the production endpoints (tools.vibecodr.space + openai.vibecodr.space/mcp) and the §14 output-baseline fixtures matched byte-for-byte.

@@ -71,7 +71,7 @@ const forbiddenPatterns = [
   /(^|\/).*bak$/i,
   /(^|\/).*log$/i
 ];
-const allowedRootFiles = new Set(["LICENSE", "README.md", "CHANGELOG.md", "MIGRATION.md", "package.json"]);
+const allowedRootFiles = new Set(["LICENSE", "README.md", "CHANGELOG.md", "MIGRATION.md", "package.json", "preinstall-check.mjs"]);
 const forbiddenPackagePaths = pack.files
   .map((file) => file.path)
   .filter((file) =>
