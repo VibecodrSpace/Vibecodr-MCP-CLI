@@ -2,6 +2,16 @@
 
 Pre-1.0.0 history for the `@vibecodr/cli@0.2.x` and `0.1.x` lines lives at [`docs/legacy/CHANGELOG-mcp-cli.md`](docs/legacy/CHANGELOG-mcp-cli.md). The `@vibecodr/vc-tools@0.1.x` line was the other half of the May 2026 merge; its source history is preserved in the archived [`BradenHartsell/vc-tools`](https://github.com/BradenHartsell/vc-tools) repository.
 
+## 1.0.3
+
+Closes a Windows-CI flake in the hosted Browser Agent Workflow's idle-timeout closure path. No behavior change to the dispatcher or any CLI surface; the fix lives entirely inside `src/hosted/worker.ts` and matters only for the worker test suite plus the deployed Cloudflare Worker.
+
+The worker's post-wait idle check measured `Date.now() - lastMeaningfulAt` after a `setTimeout` whose duration was capped at `idleTimeoutMs`. On Windows the OS system clock has ~15.6 ms tick resolution while Node's `setTimeout` uses a higher-resolution wakeup, so a `setTimeout(1_000)` could complete and a subsequent `Date.now()` read could still report 985-999 ms of elapsed wall clock — causing `>= idleTimeoutMs` to fall through and leave `closureReason` as `"completed"` when the workflow had clearly consumed its entire idle window.
+
+The fix accounts for waits against the idle budget using the planned sleep duration (`performed.ms`) — the value the worker already requested from `setTimeout` — rather than measuring `Date.now()` across the sleep. This is the deterministic source of truth for "did this wait consume the idle window," matches the existing semantic that wait actions consume idle budget by their requested duration, and preserves all existing behavior for the happy `"completed"` path and for explicit sub-budget waits.
+
+- `src/hosted/worker.ts`: switch post-wait idle accounting from wall-clock delta to planned-sleep duration.
+
 ## 1.0.2
 
 Hardens `preinstall-check.mjs` to also catch the **orphan-bin-shim** case that the 1.0.1 check missed.
