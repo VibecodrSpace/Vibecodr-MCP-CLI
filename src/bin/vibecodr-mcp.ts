@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { reconcileEnv } from "../core/env.js";
+import { migrateLegacyDirsOnce } from "../storage/migrate.js";
 import { ConfigStore } from "../storage/config-store.js";
 import { SecretStore } from "../storage/secret-store.js";
 import { TokenManager } from "../auth/token-manager.js";
@@ -23,6 +24,7 @@ import { runPulseCommand } from "../commands/pulse.js";
 import { runUploadCommand } from "../commands/upload.js";
 
 reconcileEnv();
+await migrateLegacyDirsOnce();
 
 function helpText(): string {
   return [

@@ -1,11 +1,13 @@
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
+import { VIBECDR_MCP_HOME } from "../storage/migrate.js";
 
 function windowsAppDataPath(): string {
   return process.env["APPDATA"] || join(homedir(), "AppData", "Roaming");
 }
 
-function vibecodrConfigRoot(): string {
+function legacyVibecodrConfigRoot(): string {
   switch (process.platform) {
     case "win32":
       return join(windowsAppDataPath(), "Vibecodr", "MCP");
@@ -14,6 +16,13 @@ function vibecodrConfigRoot(): string {
     default:
       return join(process.env["XDG_CONFIG_HOME"] || join(homedir(), ".config"), "vibecodr-mcp");
   }
+}
+
+function vibecodrConfigRoot(): string {
+  if (existsSync(VIBECDR_MCP_HOME)) return VIBECDR_MCP_HOME;
+  const legacy = legacyVibecodrConfigRoot();
+  if (existsSync(legacy)) return legacy;
+  return VIBECDR_MCP_HOME;
 }
 
 export function codexConfigPath(): string {

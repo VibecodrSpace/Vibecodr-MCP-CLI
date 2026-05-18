@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -9,13 +10,13 @@ import {
   type ProfileConfig
 } from "../types/config.js";
 import { writeFileWithBackup } from "./file-lock.js";
+import { VIBECDR_MCP_HOME } from "./migrate.js";
 
 function windowsAppDataPath(): string {
   return process.env["APPDATA"] || join(homedir(), "AppData", "Roaming");
 }
 
-export function defaultConfigPath(): string {
-  if (process.env["VIBECDR_MCP_CONFIG_PATH"]) return process.env["VIBECDR_MCP_CONFIG_PATH"];
+function legacyMcpConfigPath(): string {
   switch (process.platform) {
     case "win32":
       return join(windowsAppDataPath(), "Vibecodr", "MCP", "config.json");
@@ -24,6 +25,16 @@ export function defaultConfigPath(): string {
     default:
       return join(process.env["XDG_CONFIG_HOME"] || join(homedir(), ".config"), "vibecodr-mcp", "config.json");
   }
+}
+
+export function defaultConfigPath(): string {
+  if (process.env["VIBECDR_MCP_CONFIG_PATH"]) return process.env["VIBECDR_MCP_CONFIG_PATH"];
+  const canonical = join(VIBECDR_MCP_HOME, "config.json");
+  if (existsSync(canonical)) return canonical;
+  const legacy = legacyMcpConfigPath();
+  if (existsSync(legacy)) return legacy;
+  // Neither exists: first-write lands at the canonical location.
+  return canonical;
 }
 
 export class ConfigStore {
