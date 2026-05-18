@@ -1,204 +1,256 @@
 # Commands
 
-This page documents the command surface implemented in the current repo.
+The Vibecodr CLI talks to two hosted endpoints. Every command targets exactly one of them:
+
+| Badge | Endpoint | Auth path |
+|---|---|---|
+| `H` | `tools.vibecodr.space` | device-code (`vibecodr start` / `vc-tools start`) -> durable Clerk API key in OS keychain (`@vibecodr/vc-tools` service) |
+| `M` | `openai.vibecodr.space/mcp` | CIMD/PKCE OAuth (`vibecodr login`) -> encrypted session in OS keychain (`@vibecodr/mcp` service) + AES-GCM session file |
+| `*` | both | command picks the credential by what it talks to; no shared bin state |
+
+The three bin entries — `vibecodr`, `vibecodr-mcp`, `vc-tools` — all resolve to the same dispatcher. The `vc-tools` bin sets `__VCR_INVOKED_AS=vc-tools` and routes every command through the legacy code path so output is byte-equivalent to `@vibecodr/vc-tools@0.1.4`. The `vibecodr` bin runs the MCP-gateway commands inline and cross-routes the hosted Agent Computer commands into the legacy code path. The `vibecodr-mcp` bin is the alias preserved from `@vibecodr/cli@0.2.x`.
 
 ## Global flags
 
 All commands accept:
 
-- `--profile <name>`
-- `--json`
-- `--verbose`
-- `--non-interactive`
+- `--profile <name>` (M)
+- `--json` (\*)
+- `--verbose` (\*)
+- `--non-interactive` (\*)
 
-Alternate MCP servers are profile-scoped, not runtime overrides. Use
-`vibecodr config profile create <name> --server-url <url>` and then login to
-that profile; stored tokens are bound to the server that issued them.
+The legacy `vc-tools` bin also accepts:
 
-## Commands
+- `--api-url <url>`
+- `--config-dir <path>`
+- `--credential <value>` / `--credential-file <path>` / `--credential-stdin`
+- `--token <value>` / `--token-file <path>` / `--token-stdin`
+- `--timeout-ms <n>` (1000..300000)
+- `--quiet` / `-q`
+- `--no-input`
+- `--no-color`
+- `--debug`
+- `--allow-insecure-local-api`
 
-### `login`
+Alternate MCP servers are profile-scoped, not runtime overrides. Use `vibecodr config profile create <name> --server-url <url>` and then login to that profile; stored tokens are bound to the server that issued them.
 
-Syntax:
+## Authentication
+
+### `vibecodr login` (M)
 
 `vibecodr login [--scope <oauth-scope>] [--registration auto|preregistered|cimd|dcr|manual] [--browser open|print] [--timeout-sec <n>]`
 
-Use this to authenticate the CLI itself.
+Authenticates this CLI against the MCP gateway via CIMD/PKCE. Prints the authorization URL by default; `--browser open` launches the browser automatically. Stores the encrypted session under the `@vibecodr/mcp` keyring service.
 
-Current default:
-
-- `login` prints the authorization URL and waits for the loopback callback
-- `--browser open` opts into automatic browser launch
-
-### `logout`
-
-Syntax:
+### `vibecodr logout` (M)
 
 `vibecodr logout [--all] [--no-revoke]`
 
-Use this to clear CLI auth state. It does not touch editor-owned auth.
+Clears the MCP gateway session. Does not touch editor-owned auth or the hosted Agent Computer credential.
 
-### `status`
-
-Syntax:
+### `vibecodr status` (M)
 
 `vibecodr status [--probe] [--show-installs]`
 
-Without `--probe`, this reads only local state.
+Without `--probe`, reads only local state. `--show-installs` distinguishes configured, missing, and external managed installs.
 
-### `whoami`
-
-Syntax:
+### `vibecodr whoami` (M)
 
 `vibecodr whoami [--no-login]`
 
-Shows the connected Vibecodr account and plan by calling the protected
-`get_account_capabilities` MCP tool. It uses the same refresh and interactive
-login retry path as `call`, but prints only account identity, plan, CLI profile,
-server URL, and session state.
+Calls the protected `get_account_capabilities` MCP tool. Prints account identity, plan, CLI profile, server URL, and session state. Same refresh + interactive login retry path as `call`.
 
-### `tools`
+### `vc-tools start` / `vc-tools setup` (H)
 
-Syntax:
+`vc-tools start [--api-url <url>] [--browser open|print] [--credential ...] [--token ...] [--no-input]`
+
+`setup` is an alias for `start`. Walks device-code login against `api.vibecodr.space`, shows the matching approval code, waits for the user to approve in-browser, stores a durable Clerk API key under the `@vibecodr/vc-tools` keyring service (visible in the user's Clerk-managed API keys list as `"vc-tools Agent Computer"`), then returns the hosted MCP connection details an agent needs.
+
+### `vc-tools auth diagnose` / `vc-tools auth export-agent-env` (H)
+
+`auth diagnose` reports local credential health and which surface owns the active session. `auth export-agent-env` emits `VC_TOOLS_*` environment variables so an isolated agent shell can pick up the cached credential.
+
+## Agent client installation (*)
+
+### `vibecodr install <client>` / `vibecodr uninstall <client>`
+
+`vibecodr install <codex|cursor|vscode|windsurf|claude-desktop|claude-code> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]`
+
+Adds (or removes) the hosted Vibecodr MCP server to the client's MCP catalog. `codex`, `vscode`, and `claude-code` prefer their own CLI shim (`codex mcp add`, `code --add-mcp`, `claude mcp add`) and fall back to writing the client's config file. `cursor`, `windsurf`, `claude-desktop` always write the client's config file directly. Records the install in `installs.json` so `uninstall` can find it.
+
+### `vc-tools connect` / `vc-tools agent connect` (H)
+
+`vc-tools connect --client <codex|cursor|vscode|windsurf|claude-desktop|claude-code> [--print] [--name <server-name>] [--install] [--overwrite]`
+
+Prints (`--print`) or installs (`--install`) the MCP connection details for the hosted Agent Computer. The `vc-tools agent connect` form is the legacy spelling; both reach the same code path.
+
+## Hosted browser (H)
+
+### `vc-tools browser <subcommand>`
+
+- `browser read <https-url> [--out ./proof] [--no-wait] [--details]`
+- `browser screenshot <https-url> [--format png|jpg] [--out ./proof] [--no-wait] [--details]`
+- `browser render <https-url> [--out ./proof] [--no-wait] [--details]`
+- `browser pdf <https-url> [--out ./proof] [--no-wait] [--details]`
+- `browser crawl <https-url> [--max-pages n] [--max-depth n] [--out ./proof]`
+- `browser snapshot <https-url> [--instructions <text>] [--out ./proof]`
+- `browser ask <https-url> --instructions <text>`
+
+Public HTTPS URLs only. Localhost, private network ranges, URL credentials, and internal hostnames are blocked before any hosted work is submitted. `--no-wait` returns immediately with a `jobId` you can follow via `vc-tools work follow`. `--details` includes capability metadata in the response.
+
+## Hosted computer (H)
+
+### `vc-tools computer <subcommand>`
+
+- `computer run <command> [--out ./proof] [--no-wait]`
+- `computer test <command> [--out ./proof] [--no-wait]`
+- `computer status`
+
+`run` and `test` submit bounded commands to the hosted sandbox container (Sandbox or ProSandbox class depending on plan). Public HTTP(S) network is enabled for sandbox tests; private/metadata networks remain blocked.
+
+## Hosted work + proof (H)
+
+### `vc-tools work <subcommand>`
+
+- `work list`
+- `work follow <jobId> [--no-wait] [--timeout-sec <n>]`
+- `work show <jobId>`
+- `work cancel <jobId>`
+- `work submit <command-spec>`
+
+### `vc-tools proof <subcommand>`
+
+- `proof list [--limit <n>] [--cursor <c>]`
+- `proof get <artifactId>`
+- `proof save <artifactId> --out <path>`
+- `proof download <artifactId> --out <path>`
+- `proof delete <artifactId>`
+
+Artifact output is workspace-bounded: downloaded bytes can only be written to files you intentionally target inside the current workspace. Use `--out ./artifacts`, `--out ./artifacts/report.pdf`, or `cd` to the intended workspace and use `--out .`.
+
+### `vc-tools jobs <subcommand>` / `vc-tools artifacts <subcommand>`
+
+`jobs list|status|cancel` and `artifacts list|get|delete` are lower-level surfaces over the same underlying entities; prefer `work` and `proof` for the common flows.
+
+## Plan + usage (H)
+
+### `vc-tools usage` / `vc-tools limits`
+
+`vc-tools usage [--json]` (and the `limits` alias) reports the account's plan name, monthly and daily credit counters, current concurrent runs, and remaining headroom. The hosted worker is the authority; the CLI does not cache quotas.
+
+### `vc-tools grants <subcommand>`
+
+- `grants list`
+- `grants refresh`
+
+Inspects scoped grants the worker issues to bind a tool call to a plan + capability set.
+
+### `vc-tools retention` / `vc-tools scheduled-qa`
+
+`retention` shows or sets the account's proof-retention policy. `scheduled-qa` shows or schedules recurring QA runs (rate-limited per plan).
+
+### `vc-tools plans [--details]`
+
+Prints the plan packaging matrix (Free / Creator / Pro). With `--details`, includes per-capability limits and the tool-credit breakdown.
+
+### `vc-tools dashboard`
+
+Prints the URL of the hosted supervision dashboard. Does not open a browser; that is left to the caller.
+
+## MCP gateway tooling (M)
+
+### `vibecodr tools` / `vibecodr tools test`
 
 `vibecodr tools [<tool-name>] [--search <text>] [--schema] [--no-login]`
 
-This always reads the live tool catalog from the MCP server.
+Lists the live MCP tool catalog from `openai.vibecodr.space/mcp`. With `<tool-name>`, prints the schema for that tool. `--schema` includes the full JSON schema. `tools test <tool-name>` runs the gateway's `validators` against a sample input.
 
-### `call`
-
-Syntax:
+### `vibecodr call <tool-name>`
 
 `vibecodr call <tool-name> [--input-json <json>] [--input-file <path>] [--stdin] [--interactive] [--timeout-sec <n>] [--no-login] [--confirm]`
 
-`--interactive` currently supports top-level scalar object fields.
+Invokes the named MCP tool. `--interactive` supports top-level scalar object fields; richer schemas should use `--input-json` or `--input-file`. `--confirm` is required for known mutating tools. The CLI redacts source, descriptor, token, secret, and inline file-content fields from displayed arguments and results while preserving safe operator handles (`artifactId`, `jobId`, `requestId`, `traceId`, `errorCode`, `credentialType`, `tokenCount`, `tokenKind`). The gateway remains the authority boundary for OAuth, owner scoping, confirmation policy, and output shaping. `--timeout-sec <n>` changes only the local MCP transport timeout and is not forwarded as a server tool argument.
 
-For `quick_publish_creation` with `payload.importMode: "direct_files"`, pass file paths as normal slash-separated project paths such as `src/main.tsx` or `src/server/binding-proof.js`. Do not pre-encode slashes as `%2F`; the hosted MCP gateway encodes each URL segment when it writes files to Vibecodr.
+For `quick_publish_creation` with `payload.importMode: "direct_files"`, pass file paths as normal slash-separated project paths (`src/main.tsx`, `src/server/binding-proof.js`). Do not pre-encode slashes as `%2F`; the hosted gateway encodes each URL segment when it writes files to Vibecodr.
 
-Known mutating tools require explicit confirmation through `--confirm`. The CLI redacts secret, token, source, descriptor, and inline file-content fields from displayed arguments and results while preserving safe operator handles and counters such as `artifactId`, `jobId`, `requestId`, `traceId`, `errorCode`, `credentialType`, `tokenCount`, and `tokenKind`; the MCP gateway remains the authority boundary for OAuth, owner checks, confirmation, and output shaping.
+### `vibecodr upload`
 
-Use `--timeout-sec <n>` when a protected tool is expected to run longer than the default client wait, such as a build-backed publish retry. This changes only the local MCP transport timeout and is not forwarded as a server tool argument.
+`vibecodr upload --zip <path>` or `vibecodr upload --image <path> [--kind cover_image|avatar_image]`
 
-Use `vibecodr call get_account_capabilities --json` to read the live model-safe plan snapshot before promising hosted tool work. The gateway returns Quick Checks, Agent Browser, Sandbox, Crawl, and Artifact Shelf limits when the platform API exposes them.
+Direct-to-R2 staged uploads (no base64 payloads). Hosted gateway returns a presigned R2 PUT URL, the CLI streams the file, then the gateway records the upload metadata. Image uploads accept the kind discriminator.
 
-### `upload`
+## Pulse (M)
 
-Syntax:
+### `vibecodr pulse-setup`
 
-`vibecodr upload --zip <path> [--idempotency-key <key>] [--root-hint <path>] [--entry-hint <path>] [--timeout-sec <n>] [--no-login]`
+`vibecodr pulse-setup [--descriptor-setup-json <json> | --descriptor-setup-file <path>]`
 
-`vibecodr upload --image <path> [--kind cover_image|avatar_image] [--content-type <mime>] [--timeout-sec <n>] [--no-login]`
+Walks live Pulse setup (provider connections, secret bindings, Stripe-first webhook helper). Without args, prompts interactively.
 
-Stages a local ZIP or image through Vibecodr's API-owned upload session flow. The CLI asks the MCP gateway for a short-lived direct R2 PUT URL, uploads the bytes directly to R2, completes server-side verification, and prints safe identifiers only.
+### `vibecodr pulse-publish`
 
-ZIP uploads print a `quickPublishPayload` snippet using `payload.importMode: "staged_upload"`. The snippet asks Vibecodr to use the async staged-upload import path so larger projects can move to the heavy import lane automatically instead of making the CLI guess. Cover image uploads print a `thumbnailStagedUpload` snippet that can be passed to publish metadata tools. Avatar image uploads print an `avatarStagedUpload` identifier for avatar promotion flows.
+`vibecodr pulse-publish --name <name> (--code <source> | --code-file <path>) --confirm`
 
-Cover images support PNG, JPEG, WebP, and AVIF. Avatar images support PNG, JPEG, WebP, and GIF.
+Publishes a standalone Pulse with private source/metadata visibility by default. Runtime URL is public HTTP unless the Pulse code rejects callers. `--confirm` is required.
 
-Staged upload MCP setup and completion calls use a longer client-side wait by default so large ZIP verification does not fail only because the local CLI stopped waiting. Use `--timeout-sec <n>` only when a slower network needs a different local wait; this value is transport behavior and is not forwarded as a server tool argument.
+### `vibecodr pulse <subcommand>`
 
-The presigned URL is a bearer credential and is never printed in command output. Legacy `zip_import` / `fileBase64` remains a compatibility path for small payloads, not the preferred CLI path for whole repos or launch images.
+- `pulse list`
+- `pulse get <pulseId>`
+- `pulse status <pulseId>`
+- `pulse run <pulseId>`
+- `pulse archive <pulseId> --confirm`
+- `pulse restore <pulseId> --confirm`
+- `pulse create --confirm`
+- `pulse deploy <pulseId>`
 
-### `pulse-setup`
+Convenience wrappers over the gateway's Pulse lifecycle. `create` and `deploy` are aliases for the create-and-publish sequence; prefer the explicit form when scripting.
 
-Syntax:
+## Convenience (*)
 
-`vibecodr pulse-setup [--json] [--descriptor-setup-json <json> | --descriptor-setup-file <path>]`
+### `vc-tools try` (H)
 
-Calls the live `get_pulse_setup_guidance` MCP tool. Pass a `PulseDescriptorSetupProjection` through `--descriptor-setup-json` or `--descriptor-setup-file` when you have one; the CLI forwards it as `descriptorSetup` and verifies the MCP response evaluated that descriptor. Without a descriptor projection, the command returns general Pulse setup rules and must not be treated as proof that a specific Pulse needs or does not need backend setup.
+`vc-tools try [--out ./proof]`
 
-The CLI does not maintain separate Pulse setup copy; it reads MCP output derived from the API projection owned by `PulseDescriptor`.
+Runs a small browser + computer + proof + usage check end-to-end to verify the account, the credential, and the hosted plumbing.
 
-The returned guidance should stay capability-shaped: `env.fetch` is Vibecodr policy-mediated fetch, `env.secrets.bearer/header/query/verifyHmac` are policy-bound secret helpers, `env.webhooks.verify("stripe")` is the first certified provider helper rather than the whole webhook model, non-Stripe signed webhooks use generic HMAC format presets such as `github-sha256`, `shopify-hmac-sha256`, and `slack-v0` until fixture-backed helpers exist, `env.connections.use(provider).fetch` is provider-scoped connected-account access, `env.log` is structured logging, `env.request` is sanitized request access, `env.runtime` is safe correlation metadata, and `env.waitUntil` is best-effort after-response work. The CLI must not introduce separate cleanup, platform-binding, dispatch, raw-token, raw-authorization, or physical-storage guidance.
+### `vibecodr doctor` / `vc-tools doctor` (*)
 
-### `pulse-publish`
+`vibecodr doctor [--json]` walks local health: secret store availability, browser launcher, network reachability, MCP gateway handshake, hosted worker handshake.
 
-Syntax:
+`vc-tools doctor` does the same plus device-code surface checks.
 
-`vibecodr pulse-publish --name <name> (--code <source> | --code-file <path>) [--descriptor-json <json> | --descriptor-file <path>] [--slug <slug>] [--visibility public|unlisted|private] --confirm`
+### `vibecodr config` / `vc-tools config` (*)
 
-Calls `publish_standalone_pulse`. Standalone Pulse source/metadata visibility defaults to private. Private visibility does not add runtime authentication to the public Pulse URL. The CLI does not echo source code or descriptors in successful output.
+`config` reads and writes the CLI's profile catalog. Sub-surfaces include profile create, profile select, profile list, get, set.
 
-### `pulse`
+### `vc-tools inspect` (H)
 
-Syntax:
+`vc-tools inspect --json`
 
-- `vibecodr pulse list [--limit <n>] [--offset <n>]`
-- `vibecodr pulse get <pulse-id>`
-- `vibecodr pulse status <pulse-id>`
-- `vibecodr pulse run <pulse-id> [--input-json <json> | --input-file <path>] --confirm`
-- `vibecodr pulse archive <pulse-id> --confirm`
-- `vibecodr pulse restore <pulse-id> --confirm`
-- `vibecodr pulse create --name <name> (--code <source> | --code-file <path>) --confirm`
-- `vibecodr pulse deploy --name <name> (--code <source> | --code-file <path>) --confirm`
+Emits the goal-coverage map (which hosted capabilities are local-verified vs hosted-required vs production-smoked). Used by the release-readiness check.
 
-`create` and `deploy` are aliases for the standalone publish flow. `run`, `archive`, and `restore` require explicit confirmation. `delete` is intentionally unavailable; archive a Pulse instead. `logs` are not exposed through the hardened lifecycle surface yet.
+## Legacy bin aliases
 
-The CLI forwards lifecycle calls to MCP tools owned by the hosted gateway: `list_pulses`, `get_pulse`, `get_pulse_status`, `run_pulse`, `archive_pulse`, and `restore_pulse`. These server tools are hidden from default discovery but callable by exact name for owner recovery and CLI use.
+`vibecodr-mcp <command> ...` and `vc-tools <command> ...` are bin entries that route into the same dispatcher.
 
-### `doctor`
+- `vibecodr-mcp` produces output byte-equivalent to `@vibecodr/cli@0.2.11` for every MCP-gateway command.
+- `vc-tools` produces output byte-equivalent to `@vibecodr/vc-tools@0.1.4` for every hosted Agent Computer command.
 
-Syntax:
+If you have scripts that call either binary, no changes are required.
 
-`vibecodr doctor [--client <client>]`
+## Output and exit codes
 
-Supported client probes now:
+All commands return non-zero on failure. Stable codes:
 
-- `codex`
-- `cursor`
-- `vscode`
-- `windsurf`
+| Code | Meaning |
+|---|---|
+| 0 | success |
+| 2 | usage / input validation |
+| 3 | auth / session |
+| 4 | quota / plan limit |
+| 5 | local config / storage |
+| 6 | install / uninstall conflict |
+| 7 | runtime / hosted failure |
 
-### `config`
-
-Syntax:
-
-- `vibecodr config path`
-- `vibecodr config show`
-- `vibecodr config set <key> <value>`
-- `vibecodr config unset <key>`
-- `vibecodr config profile list`
-- `vibecodr config profile create <name> [--server-url <url>]`
-- `vibecodr config profile use <name>`
-- `vibecodr config profile delete <name> [--force]`
-
-### `install`
-
-Syntax:
-
-`vibecodr install <codex|cursor|vscode|windsurf|claude-desktop> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]`
-
-Install config only. Runtime auth remains CLI-owned or editor-owned depending on where the server is used.
-
-Claude Desktop does not load remote HTTP MCP servers natively, so the installer writes the documented `mcp-remote` stdio proxy entry (`{ command: "npx", args: ["mcp-remote", <url>] }`). Node.js / npx must be on PATH for the proxy to launch. Users can alternatively add the MCP URL via Settings -> Connectors -> Add custom connector in the desktop app.
-
-Platform support matrix:
-- **macOS**: writes to `~/Library/Application Support/Claude/claude_desktop_config.json`.
-- **Windows**: writes to `%APPDATA%\Claude\claude_desktop_config.json`.
-- **Linux**: Anthropic does not ship an official Claude Desktop build for Linux. The installer writes to `${XDG_CONFIG_HOME:-$HOME/.config}/Claude/claude_desktop_config.json`, the path used by community repackages. If you are not running such a build, install Claude Code and use `vibecodr install codex` / equivalent instead.
-
-### `uninstall`
-
-Syntax:
-
-`vibecodr uninstall <codex|cursor|vscode|windsurf|claude-desktop> [--scope user|project] [--path <dir>] [--name <server-name>] [--dry-run]`
-
-## Exit codes
-
-- `0` success
-- `1` runtime or doctor check failure
-- `2` usage error
-- `3` config or filesystem error
-- `4` auth required but unavailable in current mode
-- `5` auth failed
-- `6` network failure
-- `7` protocol or discovery failure
-- `8` tool failure
-- `9` unsupported client or missing required executable
-- `10` install or uninstall conflict
-- `11` secure credential store unavailable
-- `12` cancellation or auth timeout
-
-## Current note
-
-The commands above are implemented now. The main remaining product constraint is VS Code user-scope uninstall, because there is still no documented removal surface that this repo can safely automate without inventing one.
+`--json` shape is `{ ok: true, data, warnings }` on success and `{ ok: false, error: { code, message, status, details } }` on failure. Volatile fields (`requestId`, `traceId`, timestamps) appear in `data` / `error.details` but are filtered out of the §14 output-baseline regression contract.
