@@ -1,6 +1,6 @@
 {
   "name": "@vibecodr/cli",
-  "version": "1.0.0-pre.0",
+  "version": "1.0.0-rc.0",
   "description": "The official Vibecodr CLI: hosted browser, hosted computer, capsule uploads, Pulse operations, and agent-client MCP setup under one command.",
   "license": "Apache-2.0",
   "type": "module",
@@ -14,6 +14,7 @@
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
+    "MIGRATION.md",
     "docs"
   ],
   "engines": {
@@ -50,7 +51,7 @@
     "test:live-smoke": "node --import tsx --test test/live-smoke.smoke.ts",
     "test:integration:worker": "node --import tsx --test test/worker-gateway.integration.test.ts",
     "verify:artifact": "node scripts/check-pack-artifact.mjs",
-    "verify": "npm run check && npm test && npm run build && npm run verify:artifact"
+    "verify": "npm run check && npm run build && npm test && npm run verify:artifact"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
