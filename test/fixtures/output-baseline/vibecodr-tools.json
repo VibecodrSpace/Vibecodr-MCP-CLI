@@ -1,0 +1,1918 @@
+{
+  "schemaVersion": 1,
+  "serverUrl": "https://openai.vibecodr.space/mcp",
+  "toolCount": 31,
+  "tools": [
+    {
+      "name": "build_share_copy",
+      "title": "Build Share Copy",
+      "description": "Use this after publish to turn a live vibe into concise share copy and links. It reads the live vibe and returns launch language; it does not update metadata or post on the user's behalf.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "discover_vibes",
+      "title": "Discover Public Vibes",
+      "description": "Use this to read Vibecodr's public discovery feed or public discovery search without requiring account auth. It returns safe public vibe summaries for zero-context models that need to understand what exists before suggesting sharing, remixing, or inspiration.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_account_capabilities",
+      "title": "Get Account Capabilities",
+      "description": "Use this after the user is connected and before promising premium polish or backend features. It should tell the model what the current Vibecodr account can actually do, including public-vs-private visibility, custom SEO, and pulse/server-action capacity.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_engagement_followup_context",
+      "title": "Get Engagement Followup Context",
+      "description": "Use this after a vibe has started collecting activity. It reads public engagement totals for the connected user's live vibe and returns concrete follow-up guidance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_guided_publish_requirements",
+      "title": "Get Guided Publish Requirements",
+      "description": "Use this before leading a user through publishing when you need to know what questions to ask, what to default for them, and how to keep the flow guided instead of pushing work back onto the user. Treat final publish as a confirmed write step, then close with a premium launch summary instead of a generic success line.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_launch_best_practices",
+      "title": "Get Launch Best Practices",
+      "description": "Use this when the conversation needs a premium launch checklist. It should tell the model when to proactively offer a cover image, when to offer SEO polish, and how to keep a public vibe launch intentional instead of bare-minimum.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_launch_checklist",
+      "title": "Get Launch Checklist",
+      "description": "Use this after a vibe is live to check the user-facing launch basics: link, visibility, cover, description, and engagement follow-up. It returns actions, not raw runtime internals.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_live_vibe",
+      "title": "Get Live Vibe",
+      "description": "Use this when the conversation is about one already-published vibe and the model needs its live state, share links, or package summary.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_public_post",
+      "title": "Get Public Post",
+      "description": "Use this to inspect one public Vibecodr post by postId without account auth. It returns the live player/post links, public stats, and next social actions rather than raw source or private owner data.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_public_profile",
+      "title": "Get Public Profile",
+      "description": "Use this to read a public Vibecodr profile by handle without account auth. It is for profile context and attribution, not private account capability checks.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "handle"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_publish_readiness",
+      "title": "Get Publish Readiness",
+      "description": "Use this as the default readiness check before reaching for operation internals. It should answer whether anything still blocks launch and what the next user-facing step is.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "capsuleId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "operationId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_pulse_setup_guidance",
+      "title": "Get Pulse Setup Guidance",
+      "description": "Use this when the app may need backend logic, server actions, secrets, scheduled work, or webhook-style behavior. Pass descriptorSetup when available so guidance comes from the normalized PulseDescriptor projection instead of general rules.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "descriptorSetup": {
+            "type": "object",
+            "description": "Optional PulseDescriptorSetupProjection from Vibecodr API descriptorSetup. When supplied, setup guidance is derived from its setupTasks and compatibility blockers.",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_remix_lineage",
+      "title": "Get Remix Lineage",
+      "description": "Use this to read public remix lineage for a postId or capsuleId. It helps models talk about fork/remix context without exposing source internals.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          },
+          "capsuleId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_runtime_readiness",
+      "title": "Get Runtime Readiness",
+      "description": "Use this when the user needs user-facing launch/runtime state for a known publish operation, draft, or live vibe. Prefer operationId during a current publish flow; use postId for an already-live vibe and draftId only for a safe draft summary. Return one next action without exposing raw manifests, iframe internals, CSP details, or telemetry rows.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "capsuleId": {
+            "type": "string"
+          },
+          "postId": {
+            "type": "string"
+          },
+          "draftId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_upload_capabilities",
+      "title": "Get Upload Capabilities",
+      "description": "Use this as the first safe read when a fresh model needs import modes, payload shape, runners, limits, or guided publish defaults before any write. After this read, prefer quick_publish_creation for the normal guided flow. Public is the default visibility unless the user asks for unlisted or private.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_vibe_engagement_summary",
+      "title": "Get Vibe Engagement Summary",
+      "description": "Use this when the user wants to know how a published vibe is performing or what people can do with it now that it is live.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_vibe_share_link",
+      "title": "Get Vibe Share Link",
+      "description": "Use this when the user wants the best link to share a live vibe or wants to understand how the vibe will open for other people.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_vibecodr_draft",
+      "title": "Get Vibecodr Draft",
+      "description": "Use this when you need a safe summary of one draft from Vibecodr for the next publishing decision.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "draftId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "draftId"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_vibecodr_platform_overview",
+      "title": "Get Vibecodr Platform Overview",
+      "description": "Use this when the user asks what Vibecodr is, how it works as a social platform, what makes a vibe different from a normal app, or what people can do after publishing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "inspect_social_preview",
+      "title": "Inspect Social Preview",
+      "description": "Use this after publish to inspect whether the vibe has the public-facing title, description, image, and links needed for a clean social preview. It is read-only guidance for polish decisions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_my_live_vibes",
+      "title": "List My Live Vibes",
+      "description": "Use this when the user wants to inspect what is already live on Vibecodr, continue from a recent publish, or manage an existing vibe instead of creating a brand-new one.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_vibecodr_drafts",
+      "title": "List Vibecodr Drafts",
+      "description": "Use this when the user explicitly wants to browse existing drafts. Otherwise prefer quick_publish_creation or get_vibecodr_draft for the current publish decision.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "prepare_publish_package",
+      "title": "Prepare Publish Package",
+      "description": "Use this as the no-write preparation step before publishing. It validates and normalizes the same sourceType/payload shape as quick_publish_creation, infers entry/title/runner/package shape, returns required fixes and suggested arguments, and never creates operations, capsules, posts, artifacts, thumbnails, or live vibes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "codex_v1",
+              "chatgpt_v1"
+            ]
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "sourceReference": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "runner": {
+                "type": "string",
+                "enum": [
+                  "client-static",
+                  "webcontainer"
+                ]
+              },
+              "entry": {
+                "type": "string",
+                "minLength": 1
+              },
+              "importMode": {
+                "type": "string",
+                "enum": [
+                  "direct_files",
+                  "zip_import",
+                  "github_import",
+                  "staged_upload"
+                ]
+              },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "path",
+                    "content"
+                  ],
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "contentEncoding": {
+                      "type": "string",
+                      "enum": [
+                        "utf8",
+                        "base64"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "idempotencyKey": {
+                "type": "string"
+              },
+              "github": {
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^https://(?:www\\.)?github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\\.git)?/?$",
+                    "description": "HTTPS github.com repository URL only, for example https://github.com/owner/repo or https://github.com/owner/repo.git. Do not include branch/tree paths, query strings, fragments, credentials, ports, or raw/file URLs."
+                  },
+                  "branch": {
+                    "type": "string"
+                  },
+                  "rootHint": {
+                    "type": "string"
+                  },
+                  "allowModuleScripts": {
+                    "type": "boolean"
+                  },
+                  "async": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "zip": {
+                "type": "object",
+                "required": [
+                  "fileName",
+                  "fileBase64"
+                ],
+                "properties": {
+                  "fileName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "fileBase64": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rootHint": {
+                    "type": "string"
+                  },
+                  "allowModuleScripts": {
+                    "type": "boolean"
+                  },
+                  "async": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "stagedUpload": {
+                "type": "object",
+                "required": [
+                  "uploadId"
+                ],
+                "properties": {
+                  "uploadId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Verified Vibecodr staged upload id created by POST /uploads/staged and completed with POST /uploads/staged/:id/complete."
+                  },
+                  "fileName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rootHint": {
+                    "type": "string"
+                  },
+                  "entryHint": {
+                    "type": "string"
+                  },
+                  "allowModuleScripts": {
+                    "type": "boolean"
+                  },
+                  "async": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "sourceType",
+          "payload"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "publish_draft_capsule",
+      "title": "Publish Draft Capsule",
+      "description": "Recovery publish continuation. Use this only when a draft is already staged and the conversation deliberately needs a manual publish step after resume_latest_publish_flow, get_publish_readiness, or a failed/bypassed quick-publish path confirms the draft is ready. Prefer thumbnailStagedUpload for launch art already staged by a first-party upload client, then thumbnailFile with a hosted file reference; use thumbnailUpload only as a fallback, and keep the raw file under 900 KB when you must inline it. Ask for explicit publish confirmation before invoking it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "capsuleId": {
+            "type": "string"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "description": "Must be true only after the user explicitly confirms this write action in the conversation."
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "unlisted",
+              "private"
+            ]
+          },
+          "coverKey": {
+            "type": "string"
+          },
+          "thumbnailStagedUpload": {
+            "type": "object",
+            "required": [
+              "uploadId"
+            ],
+            "properties": {
+              "uploadId": {
+                "type": "string"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "thumbnailFile": {
+            "type": "object",
+            "required": [
+              "fileId",
+              "downloadUrl",
+              "contentType"
+            ],
+            "properties": {
+              "fileId": {
+                "type": "string"
+              },
+              "downloadUrl": {
+                "type": "string",
+                "format": "uri"
+              },
+              "contentType": {
+                "type": "string"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "thumbnailUpload": {
+            "type": "object",
+            "required": [
+              "contentType",
+              "fileBase64"
+            ],
+            "properties": {
+              "contentType": {
+                "type": "string"
+              },
+              "fileBase64": {
+                "type": "string"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "seo": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "imageKey": {
+                "type": "string"
+              },
+              "og": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "imageKey": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "twitter": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "imageKey": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "operationId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "publish_standalone_pulse",
+      "title": "Publish Standalone Pulse",
+      "description": "Use this only when the user wants to publish backend Pulse code by itself, without creating or publishing a frontend vibe. It creates one owner-scoped standalone Pulse through Vibecodr's /pulses API after explicit confirmation, checks account pulse capacity first, and returns a narrow publish result with no source echo, deploy token, worker name, packaging internals, or raw platform bindings. Ask for explicit confirmation before invoking it. Public, unlisted, and private are source/metadata visibility choices; private visibility does not add runtime authentication to the Pulse URL.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Human-readable Pulse name. Keep it short enough for creator dashboards."
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120000,
+            "description": "Standalone Pulse source code. Do not include secrets in source; declare required secrets in descriptor setup and use policy-bound env.secrets helpers."
+          },
+          "descriptor": {
+            "type": "object",
+            "description": "Optional PulseDescriptor. When supplied, Vibecodr validates descriptor/source compatibility before writing or deploying the Pulse.",
+            "additionalProperties": true
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 50,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Optional lowercase runtime slug using letters, numbers, and single hyphens."
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "unlisted",
+              "private"
+            ],
+            "description": "Source and metadata visibility. Defaults to private for standalone Pulse publishes. Private visibility does not add runtime authentication to the Pulse URL."
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "description": "Must be true only after the user explicitly confirms this write action in the conversation."
+          }
+        },
+        "required": [
+          "name",
+          "code",
+          "confirmed"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "quick_publish_creation",
+      "title": "Quick Publish Creation",
+      "description": "Use this for the default guided path after the user has clearly confirmed they want to publish and you can pass confirmed: true: import a generated creation, include payload.entry explicitly whenever the runnable file is obvious, infer it when needed, wait for draft readiness, compile it, and publish it as a live vibe people can run, remix, comment on, like, and share by URL. Public is the default visibility unless the user explicitly asks for unlisted or private. Prefer thumbnailStagedUpload for launch art already staged by a first-party upload client, then thumbnailFile with a hosted file reference; use thumbnailUpload only as a fallback, and keep the raw file under 900 KB when you must inline it. Ask only the missing launch questions, ask for explicit publish confirmation before invoking this tool, and if entry inference fails ask one exact question about which file starts the app. Once it succeeds, pivot immediately to shareability and the best next move. Payload format: use payload.importMode to choose the lane. For direct_files, provide payload.files with { path, content, contentEncoding? }. For github_import, provide payload.github.url as an HTTPS github.com/<owner>/<repo>[.git] repository URL only; do not include branch/tree paths, query strings, fragments, credentials, ports, raw URLs, or file URLs. For staged_upload, provide payload.stagedUpload.uploadId after bytes have been uploaded through Vibecodr staged uploads; this is preferred for whole ZIP/repo payloads and defaults to async heavy-lane fallback when the project is larger than instant import. For legacy zip_import, provide payload.zip.fileName and payload.zip.fileBase64 only for small compatibility uploads under 5 MB. Optional payload fields are title, runner, entry, sourceReference, metadata, and idempotencyKey. Do not invent wrapper keys outside this shape.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "codex_v1",
+              "chatgpt_v1"
+            ]
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "sourceReference": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "runner": {
+                "type": "string",
+                "enum": [
+                  "client-static",
+                  "webcontainer"
+                ]
+              },
+              "entry": {
+                "type": "string",
+                "minLength": 1
+              },
+              "importMode": {
+                "type": "string",
+                "enum": [
+                  "direct_files",
+                  "zip_import",
+                  "github_import",
+                  "staged_upload"
+                ]
+              },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "path",
+                    "content"
+                  ],
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "contentEncoding": {
+                      "type": "string",
+                      "enum": [
+                        "utf8",
+                        "base64"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "idempotencyKey": {
+                "type": "string"
+              },
+              "github": {
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^https://(?:www\\.)?github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\\.git)?/?$",
+                    "description": "HTTPS github.com repository URL only, for example https://github.com/owner/repo or https://github.com/owner/repo.git. Do not include branch/tree paths, query strings, fragments, credentials, ports, or raw/file URLs."
+                  },
+                  "branch": {
+                    "type": "string"
+                  },
+                  "rootHint": {
+                    "type": "string"
+                  },
+                  "allowModuleScripts": {
+                    "type": "boolean"
+                  },
+                  "async": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "zip": {
+                "type": "object",
+                "required": [
+                  "fileName",
+                  "fileBase64"
+                ],
+                "properties": {
+                  "fileName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "fileBase64": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rootHint": {
+                    "type": "string"
+                  },
+                  "allowModuleScripts": {
+                    "type": "boolean"
+                  },
+                  "async": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "stagedUpload": {
+                "type": "object",
+                "required": [
+                  "uploadId"
+                ],
+                "properties": {
+                  "uploadId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Verified Vibecodr staged upload id created by POST /uploads/staged and completed with POST /uploads/staged/:id/complete."
+                  },
+                  "fileName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rootHint": {
+                    "type": "string"
+                  },
+                  "entryHint": {
+                    "type": "string"
+                  },
+                  "allowModuleScripts": {
+                    "type": "boolean"
+                  },
+                  "async": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "description": "Must be true only after the user explicitly confirms this write action in the conversation."
+          },
+          "autoCompile": {
+            "type": "boolean"
+          },
+          "timeoutSeconds": {
+            "type": "number",
+            "minimum": 5,
+            "maximum": 45
+          },
+          "pollIntervalMs": {
+            "type": "integer",
+            "minimum": 250,
+            "maximum": 10000
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "unlisted",
+              "private"
+            ]
+          },
+          "coverKey": {
+            "type": "string"
+          },
+          "thumbnailStagedUpload": {
+            "type": "object",
+            "required": [
+              "uploadId"
+            ],
+            "properties": {
+              "uploadId": {
+                "type": "string"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "thumbnailFile": {
+            "type": "object",
+            "required": [
+              "fileId",
+              "downloadUrl",
+              "contentType"
+            ],
+            "properties": {
+              "fileId": {
+                "type": "string"
+              },
+              "downloadUrl": {
+                "type": "string",
+                "format": "uri"
+              },
+              "contentType": {
+                "type": "string"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "thumbnailUpload": {
+            "type": "object",
+            "required": [
+              "contentType",
+              "fileBase64"
+            ],
+            "properties": {
+              "contentType": {
+                "type": "string"
+              },
+              "fileBase64": {
+                "type": "string"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "seo": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "imageKey": {
+                "type": "string"
+              },
+              "og": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "imageKey": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "twitter": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "imageKey": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "sourceType",
+          "payload",
+          "confirmed"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "resume_latest_publish_flow",
+      "title": "Resume Latest Publish Flow",
+      "description": "Use this when the user wants to continue a publish or launch conversation but does not know the operationId. It reads the connected account's latest publish flow, returns safe known ids, and recommends the next tool without performing a write.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_vibecodr",
+      "title": "Search Vibecodr",
+      "description": "Use this to search public Vibecodr posts, profiles, and tags without account auth. It accepts friendly aliases such as vibes, apps, creators, handles, hashtags, and users, and returns compact absolute-link summaries.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "types": {
+            "type": "string",
+            "description": "Optional comma-separated filter. Supported public types: post/posts/vibes/apps, profile/profiles/users/handles/creators, tag/tags/hashtags."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 500
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "suggest_post_publish_next_steps",
+      "title": "Suggest Post Publish Next Steps",
+      "description": "Use this after publish when a fresh model needs one focused next move for the live vibe: share, polish, reply, or inspect remix/engagement context.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "update_live_vibe_metadata",
+      "title": "Update Live Vibe Metadata",
+      "description": "Use this when the user wants to refine a live vibe after publish, such as changing visibility, replacing the thumbnail, or updating SEO metadata. Prefer thumbnailStagedUpload for images already staged by a first-party upload client, then thumbnailFile when the MCP client can provide a hosted file reference. Use thumbnailUpload only as a fallback when no hosted file reference is available, and keep the raw file under 900 KB so the inline MCP payload stays reliable.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "description": "Must be true only after the user explicitly confirms this write action in the conversation."
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "unlisted",
+              "private"
+            ]
+          },
+          "coverKey": {
+            "type": "string"
+          },
+          "thumbnailStagedUpload": {
+            "type": "object",
+            "required": [
+              "uploadId"
+            ],
+            "properties": {
+              "uploadId": {
+                "type": "string"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "thumbnailFile": {
+            "type": "object",
+            "required": [
+              "fileId",
+              "downloadUrl",
+              "contentType"
+            ],
+            "properties": {
+              "fileId": {
+                "type": "string"
+              },
+              "downloadUrl": {
+                "type": "string",
+                "format": "uri"
+              },
+              "contentType": {
+                "type": "string"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "thumbnailUpload": {
+            "type": "object",
+            "required": [
+              "contentType",
+              "fileBase64"
+            ],
+            "properties": {
+              "contentType": {
+                "type": "string"
+              },
+              "fileBase64": {
+                "type": "string"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "seo": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "imageKey": {
+                "type": "string"
+              },
+              "og": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "imageKey": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "twitter": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "imageKey": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "postId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "openid",
+              "profile",
+              "email",
+              "offline_access"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "validate_creation_payload",
+      "title": "Validate Creation Payload",
+      "description": "Compatibility alias for prepare_publish_package. Use it when a client or model asks for validation language; it performs the same no-write package preparation and returns the same structured result.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "codex_v1",
+              "chatgpt_v1"
+            ]
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "sourceReference": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "runner": {
+                "type": "string",
+                "enum": [
+                  "client-static",
+                  "webcontainer"
+                ]
+              },
+              "entry": {
+                "type": "string",
+                "minLength": 1
+              },
+              "importMode": {
+                "type": "string",
+                "enum": [
+                  "direct_files",
+                  "zip_import",
+                  "github_import",
+                  "staged_upload"
+                ]
+              },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "path",
+                    "content"
+                  ],
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "contentEncoding": {
+                      "type": "string",
+                      "enum": [
+                        "utf8",
+                        "base64"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "idempotencyKey": {
+                "type": "string"
+              },
+              "github": {
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^https://(?:www\\.)?github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\\.git)?/?$",
+                    "description": "HTTPS github.com repository URL only, for example https://github.com/owner/repo or https://github.com/owner/repo.git. Do not include branch/tree paths, query strings, fragments, credentials, ports, or raw/file URLs."
+                  },
+                  "branch": {
+                    "type": "string"
+                  },
+                  "rootHint": {
+                    "type": "string"
+                  },
+                  "allowModuleScripts": {
+                    "type": "boolean"
+                  },
+                  "async": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "zip": {
+                "type": "object",
+                "required": [
+                  "fileName",
+                  "fileBase64"
+                ],
+                "properties": {
+                  "fileName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "fileBase64": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rootHint": {
+                    "type": "string"
+                  },
+                  "allowModuleScripts": {
+                    "type": "boolean"
+                  },
+                  "async": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "stagedUpload": {
+                "type": "object",
+                "required": [
+                  "uploadId"
+                ],
+                "properties": {
+                  "uploadId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Verified Vibecodr staged upload id created by POST /uploads/staged and completed with POST /uploads/staged/:id/complete."
+                  },
+                  "fileName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rootHint": {
+                    "type": "string"
+                  },
+                  "entryHint": {
+                    "type": "string"
+                  },
+                  "allowModuleScripts": {
+                    "type": "boolean"
+                  },
+                  "async": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "sourceType",
+          "payload"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    }
+  ]
+}

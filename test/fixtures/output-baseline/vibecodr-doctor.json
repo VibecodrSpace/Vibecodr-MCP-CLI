@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "checks": [
+    {
+      "id": "node-version",
+      "status": "pass",
+      "summary": "Node 24.14.0 detected."
+    },
+    {
+      "id": "browser-launcher",
+      "status": "pass",
+      "summary": "A browser launcher is available."
+    },
+    {
+      "id": "secret-store",
+      "status": "pass",
+      "summary": "Secure credential store is available."
+    },
+    {
+      "id": "server-reachability",
+      "status": "pass",
+      "summary": "Discovered authorization server https://openai.vibecodr.space."
+    },
+    {
+      "id": "pkce-supported",
+      "status": "pass",
+      "summary": "Authorization server advertises PKCE S256."
+    },
+    {
+      "id": "refresh-token",
+      "status": "pass",
+      "summary": "A refresh token is available for the current profile."
+    }
+  ]
+}

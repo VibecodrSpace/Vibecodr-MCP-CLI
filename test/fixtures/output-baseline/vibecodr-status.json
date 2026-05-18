@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "profile": "default",
+  "serverUrl": "https://openai.vibecodr.space/mcp",
+  "sessionState": "refreshable",
+  "registrationMode": "cimd",
+  "expiresAt": "2026-05-13T10:59:43.432Z",
+  "installs": []
+}

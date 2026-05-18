@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "data": {
+    "transport": "streamable_http",
+    "url": "https://tools.vibecodr.space/mcp",
+    "protocolVersion": "2025-11-25",
+    "tools": [
+      "browser.render",
+      "browser.screenshot",
+      "browser.read",
+      "browser.pdf",
+      "browser.crawl",
+      "browser.snapshot",
+      "computer.run",
+      "computer.test",
+      "proof.get",
+      "usage.status",
+      "work.status",
+      "work.cancel"
+    ]
+  },
+  "warnings": []
+}
