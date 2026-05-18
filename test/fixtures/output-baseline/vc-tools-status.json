@@ -8,9 +8,9 @@
       "credentialsExist": false,
       "credentialStore": "file",
       "dirSource": "VC_TOOLS_CONFIG_DIR",
-      "defaultDir": "C:\\Users\\brade\\.vibecodr\\tools",
-      "defaultConfigExists": true,
-      "defaultCredentialsExist": "[redacted]"
+      "defaultDir": "<machine-specific; redacted in fixture>",
+      "defaultConfigExists": "<machine-specific; redacted in fixture>",
+      "defaultCredentialsExist": "<machine-specific; redacted in fixture>"
     },
     "authSources": {
       "envOverrides": [],

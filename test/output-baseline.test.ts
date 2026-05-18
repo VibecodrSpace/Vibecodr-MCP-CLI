@@ -173,10 +173,24 @@ test("baseline: status --json (with mocked /v1/health, unauthenticated)", async 
   try {
     assert.equal(result.code, 0);
     const payload = JSON.parse(result.stdout);
-    // The status payload includes the config dir path under data.config.dir;
-    // erase it before fixture assertion so the test stays cross-machine.
+    // The status payload's data.config block carries machine-specific values:
+    //   - `dir`: the active config dir (a per-test tmpdir created by runWithMockApi)
+    //   - `defaultDir`: os.homedir() + "/.vibecodr/tools" (per-user)
+    //   - `defaultConfigExists`, `defaultCredentialsExist`: depend on whether the
+    //     running user already has a ~/.vibecodr/tools tree from prior CLI runs
+    // All four are zeroed before the fixture comparison so this test stays
+    // byte-equal across developer machines and CI runners (the GitHub Actions
+    // Windows runner uses `runneradmin` as its home, which a developer's local
+    // capture would never produce).
+    const REDACTED = "<machine-specific; redacted in fixture>";
     const filtered = filterVolatile(payload) as { data?: { config?: Record<string, unknown> } };
-    if (filtered.data?.config) filtered.data.config = { ...filtered.data.config, dir: "<machine-specific; redacted in fixture>" };
+    if (filtered.data?.config) {
+      const config = filtered.data.config;
+      if ("dir" in config) config["dir"] = REDACTED;
+      if ("defaultDir" in config) config["defaultDir"] = REDACTED;
+      if ("defaultConfigExists" in config) config["defaultConfigExists"] = REDACTED;
+      if ("defaultCredentialsExist" in config) config["defaultCredentialsExist"] = REDACTED;
+    }
     await assertOrWriteFixture("vc-tools-status.json", filtered);
   } finally {
     await result.cleanup();
