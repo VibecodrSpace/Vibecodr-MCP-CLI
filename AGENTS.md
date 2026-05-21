@@ -104,8 +104,9 @@ For interactive local publishes, prefer the checked-in helper:
 npm run publish:release -- --tag <next|latest>
 ```
 
-The helper runs `npm run verify` by default, prompts for a fresh npm OTP without
-echoing it when `NPM_CONFIG_OTP` is not set, passes the OTP only to the child
-publish process, and verifies npm readback. Do not store or commit npm OTPs.
+The helper runs `npm run verify` by default, lets npm handle the interactive
+security-key/passkey or OTP challenge, and verifies npm readback. If
+`NPM_CONFIG_OTP` is set for the current process, npm can use it, but do not store
+or commit npm OTPs, generated tokens, security-key material, or npm auth tokens.
 
 Worker deploy is also manual: `npx wrangler deploy` from this directory. The D1 binding name and database UUID are frozen contracts; verify `tools.vibecodr.space/v1/health` reports the expected version after each deploy.
