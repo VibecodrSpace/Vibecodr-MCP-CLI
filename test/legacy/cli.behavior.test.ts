@@ -82,9 +82,12 @@ test("subcommand help, quiet mode, and suggestions follow CLI conventions", asyn
     assert.match(browserHelp.stdout, /browser crawl <https-url> \[--max-pages n\] \[--max-depth n\] \[--local\|--out \.\/proof\]/);
     assert.match(browserHelp.stdout, /browser snapshot <https-url> \[--local\|--out \.\/proof\]/);
     assert.doesNotMatch(browserHelp.stdout, /browser snapshot <https-url> .*instructions/);
-    assert.match(browserHelp.stdout, /browser ask <https-url> --note <text> \[--local\|--out \.\/proof\]/);
+    assert.match(browserHelp.stdout, /browser notes <https-url> --note <text> \[--local\|--out \.\/proof\]/);
+    assert.doesNotMatch(browserHelp.stdout, /browser ask <https-url>/);
     assert.match(browserHelp.stdout, /Add --local to save completed output into \.\/vibecodr-proof automatically/);
     assert.match(browserHelp.stdout, /browser snapshot captures page state; it does not prompt an agent or model/);
+    assert.match(browserHelp.stdout, /browser notes saves your note with the snapshot/);
+    assert.doesNotMatch(browserHelp.stdout, /chat/);
   } finally {
     await browserHelp.cleanup();
   }
@@ -857,7 +860,38 @@ test("browser snapshot stays a no-prompt capture command", async () => {
     await withInstructions.cleanup();
   }
 
-  const ask = await runWithMockApi([
+  const notes = await runWithMockApi([
+    "--json",
+    "--token",
+    token,
+    "browser",
+    "notes",
+    "https://example.com",
+    "--note",
+    "Save this note with the snapshot.",
+    "--no-wait"
+  ], [
+    {
+      method: "POST",
+      path: "/v1/tools/test",
+      response: (request: RecordedRequest) => ({ jobId: "job_notes", echo: request.body })
+    }
+  ]);
+  try {
+    assert.equal(notes.code, 0);
+    const body = JSON.parse(notes.stdout);
+    assert.deepEqual(body.data.echo, {
+      capability: "browser.agent_task",
+      input: {
+        url: "https://example.com/",
+        instructions: "Save this note with the snapshot."
+      }
+    });
+  } finally {
+    await notes.cleanup();
+  }
+
+  const oldAskAlias = await runWithMockApi([
     "--json",
     "--token",
     token,
@@ -875,8 +909,8 @@ test("browser snapshot stays a no-prompt capture command", async () => {
     }
   ]);
   try {
-    assert.equal(ask.code, 0);
-    const body = JSON.parse(ask.stdout);
+    assert.equal(oldAskAlias.code, 0);
+    const body = JSON.parse(oldAskAlias.stdout);
     assert.deepEqual(body.data.echo, {
       capability: "browser.agent_task",
       input: {
@@ -885,7 +919,7 @@ test("browser snapshot stays a no-prompt capture command", async () => {
       }
     });
   } finally {
-    await ask.cleanup();
+    await oldAskAlias.cleanup();
   }
 });
 

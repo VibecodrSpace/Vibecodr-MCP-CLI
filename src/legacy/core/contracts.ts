@@ -18,6 +18,7 @@ export type CapabilityName = (typeof CAPABILITIES)[number];
 
 export const CAPABILITY_ALIASES: Record<string, CapabilityName> = {
   "browser.ask": "browser.agent_task",
+  "browser.notes": "browser.agent_task",
   "browser.snapshot": "browser.agent_task",
   "browser.read": "browser.extract_markdown",
   "browser.render": "browser.render_url",

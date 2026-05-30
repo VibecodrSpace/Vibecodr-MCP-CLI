@@ -205,10 +205,8 @@ work response.
 
 `browser snapshot <https-url>` is intentionally a no-prompt capture command: it
 captures page state and saves/returns the artifact, but it does not ask a model
-for an answer and does not accept `--instructions`. The old
-`browser ask <url> --note <text>` compatibility form is advanced-only and
-stores a caller note with the same snapshot artifact; it is not a separate
-chat-answering lane.
+for an answer and does not accept `--instructions`. The `browser notes` command
+stores a caller note with the same snapshot artifact.
 
 Agent Computer command payloads default to public HTTP(S) network availability
 for paid hosted runs. The CLI also accepts `--network public` and
@@ -326,7 +324,7 @@ The CLI validates and submits only these v1 capability names:
 
 The CLI and hosted API also accept documented aliases for agent/human ergonomics:
 
-- `browser.ask` -> `browser.agent_task`
+- `browser.notes` -> `browser.agent_task`
 - `browser.read` -> `browser.extract_markdown`
 - `browser.render` -> `browser.render_url`
 - `browser.screenshot` -> `browser.screenshot_url`

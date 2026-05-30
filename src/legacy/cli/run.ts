@@ -839,12 +839,13 @@ async function commandBrowser(context: CommandContext, subcommand: string | unde
       const normalized = normalizeBrowserSnapshotOptions(parsed);
       return submitHostedCapability(context, "browser.snapshot", normalized, "Captured a hosted Browser snapshot.", { autoFollow: true });
     }
+    case "notes":
     case "ask": {
-      const normalized = normalizeBrowserAskOptions(parsed);
-      return submitHostedCapability(context, "browser.ask", normalized, "Captured a hosted Browser snapshot with your note attached.", { autoFollow: true });
+      const normalized = normalizeBrowserNotesOptions(parsed);
+      return submitHostedCapability(context, "browser.notes", normalized, "Captured a hosted Browser snapshot with your note attached.", { autoFollow: true });
     }
     default:
-      throw unknownSubcommandError("browser", subcommand, ["render", "screenshot", "read", "markdown", "pdf", "crawl", "snapshot", "ask"], "Use vibecodr browser screenshot <https-url>, browser read <https-url>, or browser snapshot <https-url> --local.");
+      throw unknownSubcommandError("browser", subcommand, ["render", "screenshot", "read", "markdown", "pdf", "crawl", "snapshot", "notes"], "Use vibecodr browser screenshot <https-url>, browser read <https-url>, or browser snapshot <https-url> --local.");
   }
 }
 
@@ -1245,7 +1246,7 @@ function normalizeBrowserSnapshotOptions(parsed: ParsedCommandOptions): ParsedCo
   if (extraParts.length > 0 || parsed.flags.instructions !== undefined || parsed.flags.note !== undefined) {
     throw new CliError(
       "input.snapshot_is_not_prompted",
-      "browser snapshot captures the page state; it does not prompt an agent or model. Remove the note/instructions, or use `vibecodr browser ask <url> --note \"...\"` for the advanced compatibility lane.",
+      "browser snapshot captures the page state; it does not prompt an agent or model. Remove the note/instructions, or use `vibecodr browser notes <url> --note \"...\"` to save a note with the snapshot.",
       2
     );
   }
@@ -1255,7 +1256,7 @@ function normalizeBrowserSnapshotOptions(parsed: ParsedCommandOptions): ParsedCo
   };
 }
 
-function normalizeBrowserAskOptions(parsed: ParsedCommandOptions): ParsedCommandOptions {
+function normalizeBrowserNotesOptions(parsed: ParsedCommandOptions): ParsedCommandOptions {
   const [url, ...instructionParts] = parsed.positionals;
   const flags = { ...parsed.flags };
   const note = getStringFlag(flags, "note");
@@ -1269,8 +1270,8 @@ function normalizeBrowserAskOptions(parsed: ParsedCommandOptions): ParsedCommand
   }
   if (getStringFlag(flags, "instructions") === undefined) {
     throw new CliError(
-      "input.ask_note_required",
-      "browser ask is an advanced compatibility alias and needs a note. For a normal capture, use `vibecodr browser snapshot <url> --local`.",
+      "input.notes_note_required",
+      "browser notes needs a note. For a normal capture, use `vibecodr browser snapshot <url> --local`.",
       2
     );
   }
@@ -3309,13 +3310,13 @@ Usage:
   vibecodr browser crawl <https-url> [--max-pages n] [--max-depth n] [--local|--out ./proof]
   vibecodr browser snapshot <https-url> [--local|--out ./proof]
 
-Advanced compatibility:
-  vibecodr browser ask <https-url> --note <text> [--local|--out ./proof]
+Attach a note:
+  vibecodr browser notes <https-url> --note <text> [--local|--out ./proof]
 
 Notes:
   Add --local to save completed output into ./vibecodr-proof automatically.
   browser snapshot captures page state; it does not prompt an agent or model.
-  browser ask saves your note with the snapshot; it is not a chat answerer.
+  browser notes saves your note with the snapshot.
 `;
     case "work":
       return `vibecodr work

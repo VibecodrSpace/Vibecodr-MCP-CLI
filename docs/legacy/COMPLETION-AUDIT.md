@@ -504,7 +504,7 @@ is captured.
 
 - `vc-tools-finetune.md` now captures the combined founder/agent critique for
   the v1 surface: split human/agent/operator contracts, remove default
-  operator/roadmap metadata, make proof saving automatic, make `browser ask`
+  operator/roadmap metadata, make proof saving automatic, make the note helper
   honest as a snapshot lane, improve safety denials, and add a first-success
   `try` command.
 - The default hosted/user surfaces now filter internal and operator metadata:
@@ -519,8 +519,8 @@ is captured.
   until terminal and can save terminal proof. `vc-tools try` verifies auth,
   hosted API, public Browser work, hosted computer work, proof saving, and
   usage readback. `browser snapshot` is the honest name for the
-  `browser.agent_task` snapshot lane; `browser ask` remains a compatibility
-  alias with explicit copy that it is not a separate chat answerer.
+  `browser.agent_task` snapshot lane; the previous command spelling remains a
+  compatibility alias with explicit copy that it saves a note with the snapshot.
 - Local verification passed on 2026-05-17 with `npm run verify`, including CLI
   and Worker type checks, full tests, build, package artifact verification,
   goal coverage, and release-readiness gate. Focused checks also passed for

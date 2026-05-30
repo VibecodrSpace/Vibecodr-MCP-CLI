@@ -66,6 +66,8 @@ test("vibecodr bin cross-routes vc-tools commands through the legacy dispatcher"
   assert.match(result.stdout, /--local\|--out \.\/proof/);
   assert.match(result.stdout, /browser snapshot <https-url> \[--local\|--out \.\/proof\]/);
   assert.doesNotMatch(result.stdout, /browser snapshot <https-url> .*instructions/);
+  assert.match(result.stdout, /browser notes <https-url> --note <text> \[--local\|--out \.\/proof\]/);
+  assert.doesNotMatch(result.stdout, /browser ask <https-url>/);
 });
 
 test("vibecodr root help starts with guided consumer paths and keeps power flags", async () => {
@@ -91,6 +93,7 @@ test("vibecodr help routes to the owning command surface", async () => {
   assert.match(browser.stdout, /hosted Browser/);
   assert.match(browser.stdout, /Add --local to save completed output/);
   assert.match(browser.stdout, /does not prompt an agent or model/);
+  assert.doesNotMatch(browser.stdout, /chat/);
 
   const mcp = await run(vibecodrMcp, ["help", "mcp"]);
   assert.equal(mcp.code, 0, `vibecodr help mcp failed:\n${mcp.stderr}\n${mcp.stdout}`);

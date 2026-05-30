@@ -5,6 +5,7 @@ import { normalizeCapabilityName, validateBrowserUrl, validateSandboxCommand } f
 test("normalizes documented capability aliases", () => {
   assert.equal(normalizeCapabilityName("browser.render"), "browser.render_url");
   assert.equal(normalizeCapabilityName("browser.markdown"), "browser.extract_markdown");
+  assert.equal(normalizeCapabilityName("browser.notes"), "browser.agent_task");
   assert.equal(normalizeCapabilityName("sandbox.run"), "sandbox.run_command");
 });
 

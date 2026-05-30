@@ -2,12 +2,20 @@
 
 Pre-1.0.0 history for the `@vibecodr/cli@0.2.x` and `0.1.x` lines lives at [`docs/legacy/CHANGELOG-mcp-cli.md`](docs/legacy/CHANGELOG-mcp-cli.md). The `@vibecodr/vc-tools@0.1.x` line was the other half of the May 2026 merge; its source history is preserved in the archived [`BradenHartsell/vc-tools`](https://github.com/BradenHartsell/vc-tools) repository.
 
+## 1.0.14
+
+Renames the note-attaching snapshot helper to match what it does.
+
+- `vibecodr browser notes <url> --note <text>` is now the visible command for saving a note with a Browser snapshot.
+- The previous command spelling remains a hidden compatibility alias for existing scripts, but help, errors, and docs point users to `browser notes`.
+- Browser help now simply says `browser notes` saves your note with the snapshot.
+
 ## 1.0.13
 
 Makes `browser snapshot` a plain capture command instead of a confusing ask-style lane.
 
 - `vibecodr browser snapshot <url>` no longer advertises or accepts `--instructions`; the help text now says plainly that snapshot captures page state and does not prompt an agent or model.
-- `vibecodr browser ask` is kept as an advanced compatibility alias, but its visible flag is now `--note`, and the help text says it saves that note with the snapshot rather than answering like chat.
+- The old advanced compatibility alias uses `--note`, and the help text says it saves that note with the snapshot.
 - The hosted MCP `browser.snapshot` tool schema no longer exposes `instructions` or `actions`; raw `browser.agent_task` remains the lower-level compatibility capability for advanced callers.
 
 ## 1.0.12
