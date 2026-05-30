@@ -109,22 +109,23 @@ Prints (`--print`) the MCP connection details for the hosted Agent Computer. The
 
 ### `vibecodr browser <subcommand>`
 
-- `browser read <https-url> [--out ./proof] [--no-wait] [--details]`
-- `browser screenshot <https-url> [--format png|jpg] [--out ./proof] [--no-wait] [--details]`
-- `browser render <https-url> [--out ./proof] [--no-wait] [--details]`
-- `browser pdf <https-url> [--out ./proof] [--no-wait] [--details]`
-- `browser crawl <https-url> [--max-pages n] [--max-depth n] [--out ./proof]`
-- `browser snapshot <https-url> [--instructions <text>] [--out ./proof]`
+- `browser read <https-url> [--local|--out ./proof] [--no-wait] [--details]`
+- `browser screenshot <https-url> [--format png|jpg] [--local|--out ./proof] [--no-wait] [--details]`
+- `browser render <https-url> [--local|--out ./proof] [--no-wait] [--details]`
+- `browser pdf <https-url> [--local|--out ./proof] [--no-wait] [--details]`
+- `browser crawl <https-url> [--max-pages n] [--max-depth n] [--local|--out ./proof]`
+- `browser snapshot <https-url> [--instructions <text>] [--local|--out ./proof]`
 - `browser ask <https-url> --instructions <text>`
 
 Public HTTPS URLs only. Localhost, private network ranges, URL credentials, and internal hostnames are blocked before any hosted work is submitted. `--no-wait` returns immediately with a `jobId` you can follow via `vibecodr work follow`. `--details` includes capability metadata in the response.
+Use `--local` to save the completed output into `./vibecodr-proof` automatically, or `--out` when you want to choose the destination.
 
 ## Hosted computer (H)
 
 ### `vibecodr computer <subcommand>`
 
-- `computer run <command> [--out ./proof] [--no-wait]`
-- `computer test <command> [--out ./proof] [--no-wait]`
+- `computer run <command> [--local|--out ./proof] [--no-wait]`
+- `computer test <command> [--local|--out ./proof] [--no-wait]`
 - `computer status`
 
 `run` and `test` submit bounded commands to the hosted sandbox container (Sandbox or ProSandbox class depending on plan). Public HTTP(S) network is enabled for sandbox tests; private/metadata networks remain blocked.
@@ -134,7 +135,7 @@ Public HTTPS URLs only. Localhost, private network ranges, URL credentials, and 
 ### `vibecodr work <subcommand>`
 
 - `work list`
-- `work follow <jobId> [--no-wait] [--timeout-sec <n>]`
+- `work follow <jobId> [--local|--out ./proof] [--timeout-sec <n>]`
 - `work show <jobId>`
 - `work cancel <jobId>`
 - `work submit <command-spec>`
@@ -147,7 +148,7 @@ Public HTTPS URLs only. Localhost, private network ranges, URL credentials, and 
 - `proof download <artifactId> --out <path>`
 - `proof delete <artifactId>`
 
-Artifact output is workspace-bounded: downloaded bytes can only be written to files you intentionally target inside the current workspace. Use `--out ./artifacts`, `--out ./artifacts/report.pdf`, or `cd` to the intended workspace and use `--out .`.
+Artifact output is workspace-bounded: downloaded bytes can only be written to files you intentionally target inside the current workspace. Use `--local` for the default `./vibecodr-proof` folder, `--out ./artifacts`, `--out ./artifacts/report.pdf`, or `cd` to the intended workspace and use `--out .`.
 
 ### `vibecodr jobs <subcommand>` / `vibecodr artifacts <subcommand>`
 

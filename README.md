@@ -58,7 +58,7 @@ vibecodr install codex
 
 # 3. Set up the hosted Agent Computer when you want browser/computer work.
 vibecodr start
-vibecodr browser screenshot https://example.com --out ./proof
+vibecodr browser screenshot https://example.com --local
 ```
 
 Power users and automation should prefer the explicit surfaces and stable JSON:

@@ -63,6 +63,7 @@ test("vibecodr bin cross-routes vc-tools commands through the legacy dispatcher"
   assert.equal(result.code, 0, `vibecodr browser --help failed:\n${result.stderr}\n${result.stdout}`);
   assert.match(result.stdout, /vibecodr browser/);
   assert.match(result.stdout, /browser screenshot|browser read|browser render/);
+  assert.match(result.stdout, /--local\|--out \.\/proof/);
 });
 
 test("vibecodr root help starts with guided consumer paths and keeps power flags", async () => {
@@ -73,6 +74,7 @@ test("vibecodr root help starts with guided consumer paths and keeps power flags
   assert.match(result.stdout, /vibecodr start\s+Approve the Agent Computer account connection/);
   assert.match(result.stdout, /vibecodr status\s+See Agent Computer and MCP Gateway state/);
   assert.match(result.stdout, /Do useful things:/);
+  assert.match(result.stdout, /vibecodr browser screenshot https:\/\/example\.com --local/);
   assert.match(result.stdout, /vibecodr feedback/);
   assert.match(result.stdout, /For scripts and advanced use:/);
   assert.match(result.stdout, /--json\s+Stable machine-readable output/);
@@ -85,6 +87,7 @@ test("vibecodr help routes to the owning command surface", async () => {
   assert.equal(browser.code, 0, `vibecodr help browser failed:\n${browser.stderr}\n${browser.stdout}`);
   assert.match(browser.stdout, /vibecodr browser/);
   assert.match(browser.stdout, /hosted Browser/);
+  assert.match(browser.stdout, /Add --local to save completed output/);
 
   const mcp = await run(vibecodrMcp, ["help", "mcp"]);
   assert.equal(mcp.code, 0, `vibecodr help mcp failed:\n${mcp.stderr}\n${mcp.stdout}`);

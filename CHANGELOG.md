@@ -2,6 +2,14 @@
 
 Pre-1.0.0 history for the `@vibecodr/cli@0.2.x` and `0.1.x` lines lives at [`docs/legacy/CHANGELOG-mcp-cli.md`](docs/legacy/CHANGELOG-mcp-cli.md). The `@vibecodr/vc-tools@0.1.x` line was the other half of the May 2026 merge; its source history is preserved in the archived [`BradenHartsell/vc-tools`](https://github.com/BradenHartsell/vc-tools) repository.
 
+## 1.0.12
+
+Makes hosted Agent Computer outputs visible and easy to save from the first command result.
+
+- `vibecodr browser ...`, `vibecodr computer ...`, and `vibecodr work follow` now accept `--local`, which waits for the hosted job and saves the completed artifact into `./vibecodr-proof`.
+- Completed output now includes the artifact handle plus ready-to-run `vibecodr proof show` and `vibecodr proof save` commands instead of returning only `{ "status": "completed" }`.
+- Root help, command help, docs, fixtures, and tests now advertise and lock the `--local` path for the simplest user flow.
+
 ## 1.0.11
 
 Supersedes 1.0.10 with the same CLI auth guidance plus a release-packaging guard.

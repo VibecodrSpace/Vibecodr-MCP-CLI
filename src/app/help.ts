@@ -47,7 +47,7 @@ export function rootHelpText(): string {
     "",
     "Do useful things:",
     "  vibecodr browser read https://example.com",
-    "  vibecodr browser screenshot https://example.com --out ./proof",
+    "  vibecodr browser screenshot https://example.com --local",
     "  vibecodr upload --zip ./project.zip",
     "  vibecodr pulse list",
     "  vibecodr feedback \"This part was confusing\"",

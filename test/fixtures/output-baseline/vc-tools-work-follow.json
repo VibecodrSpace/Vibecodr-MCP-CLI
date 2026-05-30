@@ -1,7 +1,12 @@
 {
   "ok": true,
   "data": {
-    "status": "completed"
+    "status": "completed",
+    "artifact": {
+      "id": "art_test_1234567890",
+      "showCommand": "vibecodr proof show art_test_1234567890",
+      "saveCommand": "vibecodr proof save art_test_1234567890 --out ./vibecodr-proof"
+    }
   },
   "warnings": []
 }

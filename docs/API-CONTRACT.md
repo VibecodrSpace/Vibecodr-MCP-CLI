@@ -196,10 +196,12 @@ user-debugging data. `--operator` is server-gated and only works for actors
 authorized to read internal launch metadata.
 
 Browser and computer aliases submit hosted work, wait for terminal status by
-default, and summarize the result. `--out ./proof` saves the terminal artifact
-without requiring the caller to copy a job or artifact ID. `--no-wait` returns
-the queued hosted job response for advanced callers. `--details` includes the
-raw work/proof identifiers.
+default, and summarize the result. `--local` saves the terminal artifact into
+`./vibecodr-proof`; `--out ./proof` saves it to a caller-selected destination.
+Completed output includes the artifact handle and ready-to-run proof commands
+so callers are not left with only a terminal status. `--no-wait` returns the
+queued hosted job response for advanced callers. `--details` includes the raw
+work response.
 
 Agent Computer command payloads default to public HTTP(S) network availability
 for paid hosted runs. The CLI also accepts `--network public` and

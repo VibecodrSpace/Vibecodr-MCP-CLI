@@ -76,6 +76,31 @@ test("subcommand help, quiet mode, and suggestions follow CLI conventions", asyn
     await whoamiHelp.cleanup();
   }
 
+  const browserHelp = await runWithMockApi(["help", "browser"]);
+  try {
+    assert.equal(browserHelp.code, 0);
+    assert.match(browserHelp.stdout, /browser crawl <https-url> \[--max-pages n\] \[--max-depth n\] \[--local\|--out \.\/proof\]/);
+    assert.match(browserHelp.stdout, /Add --local to save completed output into \.\/vibecodr-proof automatically/);
+  } finally {
+    await browserHelp.cleanup();
+  }
+
+  const computerHelp = await runWithMockApi(["help", "computer"]);
+  try {
+    assert.equal(computerHelp.code, 0);
+    assert.match(computerHelp.stdout, /computer run "<command>".*\[--local\|--out \.\/proof\]/);
+  } finally {
+    await computerHelp.cleanup();
+  }
+
+  const workHelp = await runWithMockApi(["help", "work"]);
+  try {
+    assert.equal(workHelp.code, 0);
+    assert.match(workHelp.stdout, /work follow <jobId> \[--local\|--out \.\/proof\]/);
+  } finally {
+    await workHelp.cleanup();
+  }
+
   const authHelp = await runWithMockApi(["help", "auth"]);
   try {
     assert.equal(authHelp.code, 0);
@@ -887,7 +912,9 @@ test("agent-computer aliases submit safe hosted work without exposing low-level 
     });
     assert.equal(body.data.status, "completed");
     assert.equal(body.data.tool, "browser.screenshot");
-    assert.doesNotMatch(screenshot.stdout, /job_screen|art_screen/);
+    assert.equal(body.data.artifact.id, "art_screen");
+    assert.match(body.data.artifact.saveCommand, /vibecodr proof save art_screen --out \.\/vibecodr-proof/);
+    assert.doesNotMatch(screenshot.stdout, /job_screen/);
   } finally {
     await screenshot.cleanup();
   }
@@ -953,12 +980,65 @@ test("agent-computer aliases wait and save proof without requiring artifact ids"
     assert.equal(result.code, 0);
     const body = JSON.parse(result.stdout);
     assert.equal(body.data.status, "completed");
+    assert.equal(body.data.artifact.id, "art_screen");
+    assert.equal(body.data.proof.artifactId, "art_screen");
     assert.match(body.data.proof.path, /proof/);
     assert.equal(body.data.proof.bytes, 3);
-    assert.doesNotMatch(result.stdout, /job_screen|art_screen/);
+    assert.doesNotMatch(result.stdout, /job_screen/);
     assert.deepEqual([...await readFile(body.data.proof.path)], [1, 2, 3]);
   } finally {
     await result.cleanup();
+  }
+
+  const local = await runWithMockApi([
+    "--json",
+    "--token",
+    token,
+    "browser",
+    "crawl",
+    "https://example.com",
+    "--local"
+  ], [
+    { method: "POST", path: "/v1/tools/test", response: { id: "job_crawl", status: "queued" } },
+    { method: "GET", path: "/v1/jobs/job_crawl", response: { id: "job_crawl", status: "completed", result: { artifactId: "art_crawl", kind: "crawl-json", bytes: 12, contentType: "application/json; charset=utf-8" } } },
+    {
+      method: "GET",
+      path: "/v1/artifacts/art_crawl/download",
+      response: new TextEncoder().encode("{\"ok\":true}"),
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "content-disposition": "attachment; filename=\"crawl.json\""
+      }
+    }
+  ]);
+  try {
+    assert.equal(local.code, 0);
+    const body = JSON.parse(local.stdout);
+    assert.equal(body.data.status, "completed");
+    assert.equal(body.data.artifact.id, "art_crawl");
+    assert.match(body.data.proof.path, /vibecodr-proof/);
+    assert.equal(body.data.proof.artifactId, "art_crawl");
+    assert.equal(await readFile(body.data.proof.path, "utf8"), "{\"ok\":true}");
+  } finally {
+    await local.cleanup();
+  }
+
+  const localNoWait = await runWithMockApi([
+    "--json",
+    "--token",
+    token,
+    "browser",
+    "crawl",
+    "https://example.com",
+    "--local",
+    "--no-wait"
+  ]);
+  try {
+    assert.equal(localNoWait.code, 2);
+    assert.equal(localNoWait.requests.length, 0);
+    assert.match(localNoWait.stderr, /--local saves the completed output/);
+  } finally {
+    await localNoWait.cleanup();
   }
 
   const offline = await runWithMockApi([
@@ -1146,7 +1226,8 @@ test("computer run --wait completes the loop and returns terminal status", async
     const body = JSON.parse(result.stdout);
     assert.equal(body.data.status, "completed");
     assert.equal(body.data.tool, "computer.run");
-    assert.doesNotMatch(result.stdout, /job_run|art_run/);
+    assert.equal(body.data.artifact.id, "art_run");
+    assert.doesNotMatch(result.stdout, /job_run/);
   } finally {
     await result.cleanup();
   }

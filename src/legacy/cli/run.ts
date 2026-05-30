@@ -45,7 +45,7 @@ const MAX_CREDENTIAL_BYTES = 64 * 1024;
 const DEFAULT_AUTH_API_URL = "https://api.vibecodr.space";
 const GRANT_REFRESH_SKEW_SECONDS = 60;
 const ARTIFACT_OUTPUT_WORKSPACE_MESSAGE =
-  "Artifact output is workspace-bounded so downloaded bytes can only be written to files you intentionally target inside this workspace. Use --out ./artifacts, --out ./artifacts/report.pdf, or cd to the intended workspace and use --out .";
+  "Artifact output is workspace-bounded so downloaded bytes can only be written to files you intentionally target inside this workspace. Use --local for ./vibecodr-proof, --out ./artifacts, --out ./artifacts/report.pdf, or cd to the intended workspace and use --out .";
 const ARTIFACT_INPUT_WORKSPACE_MESSAGE =
   "Artifact upload sources are workspace-bounded so the CLI only reads files you intentionally target inside this workspace. Move the file into this workspace, or cd to the workspace that contains it.";
 
@@ -924,6 +924,8 @@ interface SubmitHostedCapabilityOptions {
   autoFollow?: boolean;
 }
 
+const DEFAULT_LOCAL_PROOF_DIR = "vibecodr-proof";
+
 async function submitHostedCapability(
   context: CommandContext,
   capabilityInput: string,
@@ -932,6 +934,9 @@ async function submitHostedCapability(
   options: SubmitHostedCapabilityOptions = {}
 ): Promise<CommandResult> {
   const capability = normalizeCapabilityName(capabilityInput);
+  if (getBooleanFlag(parsed.flags, "local") && shouldSkipWait(parsed)) {
+    throw new CliError("input.local_requires_wait", "--local saves the completed output, so it cannot be combined with --no-wait.", 2);
+  }
   const payload = buildToolTestPayload(
     capability,
     parsed.positionals[0],
@@ -978,8 +983,8 @@ async function followSubmittedWork(
     ? submitted
     : await pollWorkUntilTerminal(client, jobId, parsed);
   const artifactId = artifactIdFromWork(terminal);
-  const proof = artifactId && getStringFlag(parsed.flags, "out") !== undefined
-    ? await saveArtifact(context, client, artifactId, parsed)
+  const proof = artifactId && shouldSaveArtifact(parsed)
+    ? await saveArtifact(context, client, artifactId, parsedWithLocalOutput(parsed))
     : undefined;
 
   return {
@@ -995,8 +1000,8 @@ async function commandWorkFollow(context: CommandContext, parsed: ParsedCommandO
   const client = createClient(context, profile, await resolveToken(context, true));
   const job = await pollWorkUntilTerminal(client, jobId, parsed);
   const artifactId = artifactIdFromWork(job);
-  const proof = artifactId && getStringFlag(parsed.flags, "out") !== undefined
-    ? await saveArtifact(context, client, artifactId, parsed)
+  const proof = artifactId && shouldSaveArtifact(parsed)
+    ? await saveArtifact(context, client, artifactId, parsedWithLocalOutput(parsed))
     : undefined;
   return {
     message: formatCompletedWorkMessage(undefined, job, proof),
@@ -1057,11 +1062,79 @@ function artifactIdFromWork(value: unknown): string | undefined {
   return undefined;
 }
 
+interface WorkArtifactSummary {
+  id: string;
+  kind?: string;
+  contentType?: string;
+  bytes?: number;
+}
+
+function workArtifactSummary(value: unknown): WorkArtifactSummary | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const source = isRecord(value.result) && typeof value.result.artifactId === "string"
+    ? value.result
+    : typeof value.artifactId === "string"
+      ? value
+      : undefined;
+  if (source) {
+    return {
+      id: String(source.artifactId),
+      ...(typeof source.kind === "string" ? { kind: source.kind } : {}),
+      ...(typeof source.contentType === "string" ? { contentType: source.contentType } : {}),
+      ...(typeof source.bytes === "number" ? { bytes: source.bytes } : {})
+    };
+  }
+  if (Array.isArray(value.artifacts)) {
+    const first = value.artifacts.find((item) => isRecord(item) && typeof item.id === "string");
+    if (isRecord(first) && typeof first.id === "string") {
+      return {
+        id: first.id,
+        ...(typeof first.kind === "string" ? { kind: first.kind } : {}),
+        ...(typeof first.contentType === "string" ? { contentType: first.contentType } : {}),
+        ...(typeof first.bytes === "number" ? { bytes: first.bytes } : {})
+      };
+    }
+  }
+  return undefined;
+}
+
+function shouldSaveArtifact(parsed: ParsedCommandOptions): boolean {
+  return getStringFlag(parsed.flags, "out") !== undefined || getBooleanFlag(parsed.flags, "local");
+}
+
+function parsedWithLocalOutput(parsed: ParsedCommandOptions): ParsedCommandOptions {
+  if (getStringFlag(parsed.flags, "out") !== undefined || !getBooleanFlag(parsed.flags, "local")) {
+    return parsed;
+  }
+  return {
+    ...parsed,
+    flags: {
+      ...parsed.flags,
+      out: DEFAULT_LOCAL_PROOF_DIR
+    }
+  };
+}
+
 function formatCompletedWorkMessage(capability: CapabilityName | undefined, work: unknown, proof?: SavedArtifact): string {
   const status = workStatus(work) ?? "completed";
   if (status === "completed") {
-    const saved = proof ? `\nProof saved: ${proof.path}` : "";
-    return `${completedCapabilityMessage(capability)}${saved}`;
+    if (proof) {
+      return `${completedCapabilityMessage(capability)}\nSaved output: ${proof.path}`;
+    }
+    const artifact = workArtifactSummary(work);
+    if (artifact) {
+      const details = [artifact.kind, formatByteCount(artifact.bytes)].filter(Boolean).join(", ");
+      return [
+        completedCapabilityMessage(capability),
+        `Output ready${details ? `: ${details}` : "."}`,
+        `View it: vibecodr proof show ${artifact.id}`,
+        `Save it: vibecodr proof save ${artifact.id} --out ./${DEFAULT_LOCAL_PROOF_DIR}`,
+        `Next time: add --local to save it automatically.`
+      ].join("\n");
+    }
+    return completedCapabilityMessage(capability);
   }
   if (status === "queued" || status === "running") {
     const id = jobIdFromWork(work);
@@ -1104,16 +1177,43 @@ interface SavedArtifact {
   contentType: string;
 }
 
+function formatByteCount(bytes: number | undefined): string | undefined {
+  if (bytes === undefined || !Number.isFinite(bytes)) {
+    return undefined;
+  }
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  const kib = bytes / 1024;
+  if (kib < 1024) {
+    return `${Math.round(kib * 10) / 10} KB`;
+  }
+  const mib = kib / 1024;
+  return `${Math.round(mib * 10) / 10} MB`;
+}
+
 function publicWorkResult(capability: CapabilityName | undefined, work: unknown, parsed: ParsedCommandOptions, proof?: SavedArtifact): Record<string, unknown> {
   const details = getBooleanFlag(parsed.flags, "details");
+  const artifact = workArtifactSummary(work);
   const result: Record<string, unknown> = {
     status: workStatus(work) ?? "completed"
   };
   if (capability) {
     result.tool = userToolName(capability);
   }
+  if (artifact) {
+    result.artifact = {
+      id: artifact.id,
+      ...(artifact.kind ? { kind: artifact.kind } : {}),
+      ...(artifact.contentType ? { contentType: artifact.contentType } : {}),
+      ...(artifact.bytes !== undefined ? { bytes: artifact.bytes } : {}),
+      showCommand: `vibecodr proof show ${artifact.id}`,
+      saveCommand: `vibecodr proof save ${artifact.id} --out ./${DEFAULT_LOCAL_PROOF_DIR}`
+    };
+  }
   if (proof) {
     result.proof = {
+      artifactId: proof.artifactId,
       path: proof.path,
       bytes: proof.bytes,
       contentType: proof.contentType
@@ -3062,9 +3162,9 @@ Examples:
   vibecodr try
   vibecodr agent connect --client codex
   vibecodr computer status
-  vibecodr browser screenshot https://example.com --format png --out ./proof
+  vibecodr browser screenshot https://example.com --format png --local
   vibecodr browser read https://example.com
-  vibecodr computer run "npm test" --out ./proof
+  vibecodr computer run "npm test" --local
   vibecodr work follow job_123
   vibecodr proof save art_123 --out ./artifacts
 
@@ -3162,8 +3262,8 @@ Public HTTP(S) package/docs access is available by default; private, local, and 
 Usage:
   vibecodr computer start
   vibecodr computer status
-  vibecodr computer run "<command>" [--timeout-ms <ms>] [--network public|off] [--out ./proof] [--no-wait] [--details]
-  vibecodr computer test "<command>" [--timeout-ms <ms>] [--network public|off] [--out ./proof] [--no-wait] [--details]
+  vibecodr computer run "<command>" [--timeout-ms <ms>] [--network public|off] [--local|--out ./proof] [--no-wait] [--details]
+  vibecodr computer test "<command>" [--timeout-ms <ms>] [--network public|off] [--local|--out ./proof] [--no-wait] [--details]
 `;
     case "browser":
       return `vibecodr browser
@@ -3171,15 +3271,16 @@ Usage:
 Use the hosted Browser against public HTTPS pages. Localhost, private networks, URL credentials, and internal hosts are blocked before hosted work is submitted.
 
 Usage:
-  vibecodr browser screenshot <https-url> [--format png] [--out ./proof] [--no-wait] [--details]
-  vibecodr browser read <https-url> [--out ./proof] [--no-wait] [--details]
-  vibecodr browser render <https-url> [--out ./proof] [--no-wait] [--details]
-  vibecodr browser pdf <https-url> [--out ./proof] [--no-wait] [--details]
-  vibecodr browser crawl <https-url> [--max-pages n] [--max-depth n]
-  vibecodr browser snapshot <https-url> [--instructions <text>]
+  vibecodr browser screenshot <https-url> [--format png] [--local|--out ./proof] [--no-wait] [--details]
+  vibecodr browser read <https-url> [--local|--out ./proof] [--no-wait] [--details]
+  vibecodr browser render <https-url> [--local|--out ./proof] [--no-wait] [--details]
+  vibecodr browser pdf <https-url> [--local|--out ./proof] [--no-wait] [--details]
+  vibecodr browser crawl <https-url> [--max-pages n] [--max-depth n] [--local|--out ./proof]
+  vibecodr browser snapshot <https-url> [--instructions <text>] [--local|--out ./proof]
   vibecodr browser ask <https-url> --instructions <text>
 
 Notes:
+  Add --local to save completed output into ./vibecodr-proof automatically.
   browser snapshot captures a bounded inspection snapshot for your agent to analyze. browser ask is a compatibility alias; it is not a separate chat answerer.
 `;
     case "work":
@@ -3190,7 +3291,7 @@ Inspect hosted work the agent has submitted.
 Usage:
   vibecodr work list [--limit 20]
   vibecodr work show <jobId>
-  vibecodr work follow <jobId> [--out ./proof] [--details]
+  vibecodr work follow <jobId> [--local|--out ./proof] [--details]
   vibecodr work cancel <jobId> --yes
 `;
     case "proof":
