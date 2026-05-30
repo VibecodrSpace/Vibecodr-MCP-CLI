@@ -76,8 +76,9 @@ Expected results:
 - `inspect` reports one hosted-required check for CLI-contract releases and zero
   hosted-required checks after live production smoke.
 - Unsafe browser URL smoke exits non-zero before any hosted request.
-- The Worker returns health, MCP metadata, and fail-closed auth responses; tests
-  keep contract-mode coverage for no-cost route validation.
+- The Worker returns health, MCP metadata, protected-resource discovery, Bearer
+  auth challenges, and fail-closed auth responses; tests keep contract-mode
+  coverage for no-cost route validation.
 - The contract-mode Worker supports MCP `initialize`, `tools/list`, and
   `tools/call` JSON-RPC requests.
 - Hosted dashboard sections render overview, usage, activity, artifacts, grants,
@@ -208,8 +209,9 @@ Expected hosted guarantees:
   `hosted.worker_5xx` operator alert through the same fanout path. Keep this
   code in parent internal-api `ALERT_CODES`; payloads must stay sanitized to
   method, path pattern, status, and redacted error text only.
-- Hosted API/MCP auth failures write anonymous `auth.failed` audit rows. The
-  scheduled Worker aggregates them and emits the account-scoped
+- Hosted API/MCP auth failures write anonymous `auth.failed` audit rows. OAuth
+  discovery probes are served before auth and must not enter this metric. The
+  scheduled Worker aggregates auth failures and emits the account-scoped
   `E-VIBECODR-VC-TOOLS-AUTH-FAILURE-ANOMALY` /
   `auth.failure_anomaly` operator alert when
   `VC_TOOLS_AUTH_FAILURE_ALERT_THRESHOLD` is crossed inside

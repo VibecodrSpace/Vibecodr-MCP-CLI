@@ -28,6 +28,17 @@ function clientDisplayName(client: ClientTarget): string {
   }
 }
 
+function isHostedAgentComputerMcpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && url.hostname === "tools.vibecodr.space"
+      && (url.pathname === "/mcp" || url.pathname === "/v1/mcp");
+  } catch {
+    return false;
+  }
+}
+
 export async function runInstallCommand(args: string[], context: CommandContext): Promise<void> {
   if (showHelpIfRequested(args, context, "Usage: vibecodr install <codex|cursor|vscode|windsurf|claude-desktop|claude-code> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]")) return;
   const client = args[0] as ClientTarget | undefined;
@@ -39,6 +50,13 @@ export async function runInstallCommand(args: string[], context: CommandContext)
     booleanFlags: ["open-client", "overwrite", "dry-run"]
   });
   const { serverUrl } = await context.tokenManager.resolveProfile(context.globalOptions);
+  if (isHostedAgentComputerMcpUrl(serverUrl)) {
+    throw new CliError(
+      "install.agent_computer_remote_auth_unsupported",
+      "This profile points at tools.vibecodr.space/mcp, which uses vc-tools Agent Computer grants. `vibecodr install` only writes OAuth-backed MCP Gateway configs; use a profile pointed at https://openai.vibecodr.space/mcp, or run `vibecodr start` for Agent Computer setup.",
+      EXIT_CODES.usage
+    );
+  }
   const request = {
     serverUrl,
     name: typeof flags["name"] === "string" ? flags["name"] : defaultName(serverUrl),

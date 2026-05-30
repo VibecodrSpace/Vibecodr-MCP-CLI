@@ -2,6 +2,15 @@
 
 Pre-1.0.0 history for the `@vibecodr/cli@0.2.x` and `0.1.x` lines lives at [`docs/legacy/CHANGELOG-mcp-cli.md`](docs/legacy/CHANGELOG-mcp-cli.md). The `@vibecodr/vc-tools@0.1.x` line was the other half of the May 2026 merge; its source history is preserved in the archived [`BradenHartsell/vc-tools`](https://github.com/BradenHartsell/vc-tools) repository.
 
+## 1.0.9
+
+Fixes the hosted Agent Computer MCP auth contract at `tools.vibecodr.space/mcp`.
+
+- `src/hosted/worker.ts`: publishes OAuth protected-resource metadata for `/mcp`, includes `WWW-Authenticate` resource metadata and scope hints on unauthenticated MCP POSTs, returns unauthenticated 404s for authorization-server discovery probes on the tools host, and keeps those discovery probes out of `auth.failed` anomaly metrics.
+- `src/legacy/cli/run.ts`: stops `vibecodr agent connect --client <editor>` from writing or printing bare named-client configs for `tools.vibecodr.space/mcp` until a supported `vc_tools` client auth flow is proven. The Agent Computer CLI credential lane remains available through `vibecodr start`, `vibecodr try`, and direct CLI commands.
+- `src/commands/install.ts`: refuses `vibecodr install <client>` when the active MCP profile points at `tools.vibecodr.space/mcp`; `install` is for the OAuth-backed MCP Gateway profile, normally `https://openai.vibecodr.space/mcp`.
+- Docs and tests now lock the separation between the MCP Gateway OAuth lane and the hosted Agent Computer `vc_tools` grant lane.
+
 ## 1.0.7
 
 Verbiage and discoverability cleanup driven by user reports on 1.0.6.

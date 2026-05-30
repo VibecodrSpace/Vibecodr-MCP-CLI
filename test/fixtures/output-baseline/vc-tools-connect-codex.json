@@ -4,5 +4,7 @@
     "transport": "streamable_http",
     "url": "https://tools.vibecodr.space/mcp"
   },
-  "warnings": []
+  "warnings": [
+    "Codex install skipped: tools.vibecodr.space/mcp uses vc-tools grants, and this CLI will not write a bare editor config until that client auth flow is explicitly supported."
+  ]
 }

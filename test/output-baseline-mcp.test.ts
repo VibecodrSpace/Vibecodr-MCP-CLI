@@ -142,3 +142,21 @@ test("baseline (MCP): vibecodr install codex --path <tmp> --dry-run --json", asy
     await rm(tmp, { recursive: true, force: true });
   }
 });
+
+test("install refuses hosted Agent Computer URLs because clients need gateway OAuth", async () => {
+  const globals = { profile: "default", json: true, verbose: false, nonInteractive: true };
+  await assert.rejects(
+    runInstallCommand(["codex", "--dry-run"], {
+      globalOptions: globals,
+      output: new Output(globals),
+      configStore: {} as never,
+      secretStore: {} as never,
+      tokenManager: {
+        resolveProfile: async () => ({ profileName: "agent-computer", serverUrl: "https://tools.vibecodr.space/mcp" }),
+        getSession: async () => undefined
+      } as never,
+      runtimeClient: {} as never
+    }),
+    /tools\.vibecodr\.space\/mcp/
+  );
+});

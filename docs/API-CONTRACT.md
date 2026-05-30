@@ -267,6 +267,21 @@ Each descriptor also includes the canonical hosted capability it maps to.
 names for advanced callers, and returns a quota/audit-shaped contract response
 unless the hosted provider mode is later set to `live`.
 
+The endpoint is an OAuth protected resource, not an authorization server. The
+hosted Worker publishes protected-resource metadata at:
+
+- `GET /.well-known/oauth-protected-resource`
+- `GET /.well-known/oauth-protected-resource/mcp`
+- `GET /.well-known/oauth-protected-resource/v1/mcp`
+
+Unauthenticated MCP `POST /mcp` responses include a Bearer
+`WWW-Authenticate` challenge with `resource_metadata` pointing at the MCP
+protected-resource metadata and `scope="vc-tools:use vc-tools:*"`. Discovery
+probes for OAuth authorization-server metadata on `tools.vibecodr.space` return
+an unauthenticated 404 because `tools` only verifies API-issued `vc_tools`
+grants; clients should not treat `openai.vibecodr.space` gateway sessions as
+valid `tools` grants.
+
 Primary agent tool names:
 
 - `browser.render` -> `browser.render_url`
@@ -426,7 +441,9 @@ The local launch package includes:
   HTTP status, and sanitized error message, never query strings, bearer tokens,
   request bodies, or actor identifiers.
   Hosted API/MCP auth failures write anonymous `auth.failed` audit metrics with
-  the semantic auth error code and sanitized path. The scheduled Worker pass
+  the semantic auth error code and sanitized path. OAuth protected-resource and
+  authorization-server discovery probes are served before the auth gate and are
+  not counted as auth failures. The scheduled Worker pass
   aggregates those rows over `VC_TOOLS_AUTH_FAILURE_WINDOW_MINUTES` and emits
   `E-VIBECODR-VC-TOOLS-AUTH-FAILURE-ANOMALY` / `auth.failure_anomaly` only when
   `VC_TOOLS_AUTH_FAILURE_ALERT_THRESHOLD` is crossed. This is an account-level

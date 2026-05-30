@@ -74,7 +74,23 @@ test("hosted worker exposes public health and MCP metadata while protecting insp
   assert.equal(mcp.response.status, 200);
   assert.equal(mcp.body.transport, "streamable_http");
   assert.equal(mcp.body.protocolVersion, "2025-11-25");
+  assert.equal((mcp.body.auth as { resourceMetadataUrl?: string }).resourceMetadataUrl, "https://tools.vibecodr.space/.well-known/oauth-protected-resource/mcp");
   assert.equal(mcp.body.tools.some((tool: { name: string; capability: string }) => tool.name === "browser.render" && tool.capability === "browser.render_url"), true);
+
+  const protectedResource = await fetchWorker("https://tools.vibecodr.space/.well-known/oauth-protected-resource/mcp", baseEnv);
+  assert.equal(protectedResource.response.status, 200);
+  assert.equal(protectedResource.body.resource, "https://tools.vibecodr.space/mcp");
+  assert.deepEqual(protectedResource.body.authorization_servers, ["https://api.vibecodr.space"]);
+  assert.deepEqual(protectedResource.body.bearer_methods_supported, ["header"]);
+  assert.deepEqual((protectedResource.body.scopes_supported as string[]).slice(0, 2), ["vc-tools:use", "vc-tools:*"]);
+
+  const missingMcpBearer = await fetchWorker("https://tools.vibecodr.space/mcp", authedEnv("mcp-token"), {
+    method: "POST",
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} })
+  });
+  assert.equal(missingMcpBearer.response.status, 401);
+  assert.match(missingMcpBearer.response.headers.get("www-authenticate") ?? "", /resource_metadata="https:\/\/tools\.vibecodr\.space\/\.well-known\/oauth-protected-resource\/mcp"/);
+  assert.match(missingMcpBearer.response.headers.get("www-authenticate") ?? "", /scope="vc-tools:use vc-tools:\*"/);
 });
 
 test("hosted worker fails closed without auth secret", async () => {
@@ -97,6 +113,11 @@ test("hosted worker fails closed without auth secret", async () => {
 
 test("hosted worker records auth failure metrics without token material", async () => {
   const env = fakeLiveEnv("auth-metric-token");
+  const discovery = await fetchWorker("https://tools.vibecodr.space/.well-known/oauth-authorization-server/mcp", env);
+  await discovery.drainWaitUntil();
+  assert.equal(discovery.response.status, 404);
+  assert.equal(env.DB.runs.some((run) => run.values.includes("auth.failed")), false);
+
   const result = await fetchWorker("https://tools.vibecodr.space/v1/me?token=query-secret", env, {
     headers: { authorization: "Bearer wrong-auth-token" }
   });

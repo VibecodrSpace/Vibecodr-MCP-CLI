@@ -1179,7 +1179,7 @@ test("agent connect prints copy-paste config snippets when --print is set", asyn
       path: "/v1/mcp/connection",
       response: {
         transport: "streamable_http",
-        url: "https://tools.vibecodr.space/mcp",
+        url: "https://agent.example.com/mcp",
         tools: [{ name: "browser.screenshot" }, { name: "computer.run" }]
       }
     }
@@ -1188,7 +1188,7 @@ test("agent connect prints copy-paste config snippets when --print is set", asyn
     assert.equal(codex.code, 0);
     assert.match(codex.stdout, /Codex connection ready/);
     assert.match(codex.stdout, /\[mcp_servers\.vc-tools\]/);
-    assert.match(codex.stdout, /url = "https:\/\/tools\.vibecodr\.space\/mcp"/);
+    assert.match(codex.stdout, /url = "https:\/\/agent\.example\.com\/mcp"/);
     assert.match(codex.stdout, /restart or open a new Codex session/);
   } finally {
     await codex.cleanup();
@@ -1200,7 +1200,7 @@ test("agent connect prints copy-paste config snippets when --print is set", asyn
       path: "/v1/mcp/connection",
       response: {
         transport: "streamable_http",
-        url: "https://tools.vibecodr.space/mcp",
+        url: "https://agent.example.com/mcp",
         tools: []
       }
     }
@@ -1210,7 +1210,7 @@ test("agent connect prints copy-paste config snippets when --print is set", asyn
     assert.match(cursor.stdout, /Cursor connection ready/);
     assert.match(cursor.stdout, /"mcpServers"/);
     assert.match(cursor.stdout, /"vc-tools"/);
-    assert.match(cursor.stdout, /"url": "https:\/\/tools\.vibecodr\.space\/mcp"/);
+    assert.match(cursor.stdout, /"url": "https:\/\/agent\.example\.com\/mcp"/);
   } finally {
     await cursor.cleanup();
   }
@@ -1221,7 +1221,7 @@ test("agent connect prints copy-paste config snippets when --print is set", asyn
       path: "/v1/mcp/connection",
       response: {
         transport: "streamable_http",
-        url: "https://tools.vibecodr.space/mcp",
+        url: "https://agent.example.com/mcp",
         tools: []
       }
     }
@@ -1237,13 +1237,64 @@ test("agent connect prints copy-paste config snippets when --print is set", asyn
   }
 });
 
+test("agent connect does not write bare client config for hosted Agent Computer auth", async () => {
+  const codex = await runWithMockApi(["--token", token, "agent", "connect", "--client", "codex", "--print"], [
+    {
+      method: "GET",
+      path: "/v1/mcp/connection",
+      response: {
+        transport: "streamable_http",
+        url: "https://tools.vibecodr.space/mcp",
+        auth: { type: "oauth_protected_resource", clientInstall: "manual_bearer_required" },
+        tools: [{ name: "computer.run" }]
+      }
+    }
+  ]);
+  try {
+    assert.equal(codex.code, 0);
+    assert.match(codex.stdout, /Codex connection ready/);
+    assert.match(codex.stdout, /install skipped: tools\.vibecodr\.space\/mcp uses vc-tools grants/);
+    assert.doesNotMatch(codex.stdout, /\[mcp_servers\.vc-tools\]/);
+  } finally {
+    await codex.cleanup();
+  }
+
+  const cursorDir = await mkdtemp(path.join(os.tmpdir(), "vc-tools-cursor-guard-"));
+  try {
+    const cursor = await runWithMockApi([
+      "--token", token,
+      "agent", "connect", "--client", "cursor",
+      "--install-dir", cursorDir
+    ], [
+      {
+        method: "GET",
+        path: "/v1/mcp/connection",
+        response: {
+          transport: "streamable_http",
+          url: "https://tools.vibecodr.space/mcp",
+          auth: { type: "oauth_protected_resource", clientInstall: "manual_bearer_required" }
+        }
+      }
+    ]);
+    try {
+      assert.equal(cursor.code, 0);
+      assert.match(cursor.stdout, /install skipped: tools\.vibecodr\.space\/mcp uses vc-tools grants/);
+      await assert.rejects(readFile(path.join(cursorDir, "mcp.json"), "utf8"));
+    } finally {
+      await cursor.cleanup();
+    }
+  } finally {
+    await rm(cursorDir, { recursive: true, force: true });
+  }
+});
+
 test("agent connect installs MCP config into a known client's config file by default", async () => {
   const connectionRoute = {
     method: "GET",
     path: "/v1/mcp/connection",
     response: {
       transport: "streamable_http",
-      url: "https://tools.vibecodr.space/mcp",
+      url: "https://agent.example.com/mcp",
       tools: [{ name: "computer.run" }]
     }
   } as const;
@@ -1260,7 +1311,7 @@ test("agent connect installs MCP config into a known client's config file by def
       assert.match(cursor.stdout, /Cursor connection ready/);
       assert.match(cursor.stdout, /Wrote Cursor MCP config/);
       const config = JSON.parse(await readFile(path.join(cursorDir, "mcp.json"), "utf8"));
-      assert.equal(config.mcpServers["vc-tools"].url, "https://tools.vibecodr.space/mcp");
+      assert.equal(config.mcpServers["vc-tools"].url, "https://agent.example.com/mcp");
       assert.equal("type" in config.mcpServers["vc-tools"], false);
     } finally {
       await cursor.cleanup();
@@ -1292,7 +1343,7 @@ test("agent connect installs MCP config into a known client's config file by def
       assert.equal(result.code, 0);
       assert.match(result.stdout, /Wrote Windsurf MCP config/);
       const config = JSON.parse(await readFile(path.join(windsurfDir, "mcp_config.json"), "utf8"));
-      assert.equal(config.mcpServers["vc-tools"].serverUrl, "https://tools.vibecodr.space/mcp");
+      assert.equal(config.mcpServers["vc-tools"].serverUrl, "https://agent.example.com/mcp");
     } finally {
       await result.cleanup();
     }
@@ -1313,7 +1364,7 @@ test("agent connect installs MCP config into a known client's config file by def
       assert.match(result.stdout, /mcp-remote stdio proxy/);
       const config = JSON.parse(await readFile(path.join(claudeDir, "claude_desktop_config.json"), "utf8"));
       assert.equal(config.mcpServers["vc-tools"].command, "npx");
-      assert.deepEqual(config.mcpServers["vc-tools"].args, ["mcp-remote", "https://tools.vibecodr.space/mcp"]);
+      assert.deepEqual(config.mcpServers["vc-tools"].args, ["mcp-remote", "https://agent.example.com/mcp"]);
       assert.equal("url" in config.mcpServers["vc-tools"], false);
     } finally {
       await result.cleanup();
@@ -1339,7 +1390,7 @@ test("agent connect install survives a macOS-style path with spaces and missing 
         path: "/v1/mcp/connection",
         response: {
           transport: "streamable_http",
-          url: "https://tools.vibecodr.space/mcp",
+          url: "https://agent.example.com/mcp",
           tools: []
         }
       }
@@ -1351,7 +1402,7 @@ test("agent connect install survives a macOS-style path with spaces and missing 
       await access(written);
       const config = JSON.parse(await readFile(written, "utf8"));
       assert.equal(config.mcpServers["vc-tools"].command, "npx");
-      assert.deepEqual(config.mcpServers["vc-tools"].args, ["mcp-remote", "https://tools.vibecodr.space/mcp"]);
+      assert.deepEqual(config.mcpServers["vc-tools"].args, ["mcp-remote", "https://agent.example.com/mcp"]);
     } finally {
       await result.cleanup();
     }
@@ -1379,7 +1430,7 @@ test("agent connect refuses to overwrite differing MCP config without --overwrit
       path: "/v1/mcp/connection",
       response: {
         transport: "streamable_http",
-        url: "https://tools.vibecodr.space/mcp"
+        url: "https://agent.example.com/mcp"
       }
     };
 
@@ -1407,7 +1458,7 @@ test("agent connect refuses to overwrite differing MCP config without --overwrit
       assert.equal(forced.code, 0);
       assert.match(forced.stdout, /Previous config backed up/);
       const config = JSON.parse(await readFile(path.join(cursorDir, "mcp.json"), "utf8"));
-      assert.equal(config.mcpServers["vc-tools"].url, "https://tools.vibecodr.space/mcp");
+      assert.equal(config.mcpServers["vc-tools"].url, "https://agent.example.com/mcp");
       assert.equal(config.mcpServers["other-server"].url, "https://keep.example.com/mcp");
       const backup = JSON.parse(await readFile(path.join(cursorDir, "mcp.json.vc-tools.bak"), "utf8"));
       assert.equal(backup.mcpServers["vc-tools"].url, "https://other.example.com/mcp");
@@ -2324,7 +2375,7 @@ test("human output exposes returned data for every successful command family", a
       name: "agent connect",
       argv: ["agent", "connect", "--client", "codex", "--print"],
       routes: [{ method: "GET", path: "/v1/mcp/connection", response: { transport: "streamable_http", url: "https://tools.vibecodr.space/mcp", tools: [{ name: "computer.run" }] } }],
-      expected: [/Codex connection ready/, /computer\.run/, /mcp_servers\.vc-tools/],
+      expected: [/Codex connection ready/, /install skipped/, /tools\.vibecodr\.space/],
       summaryOnly: true
     },
     {

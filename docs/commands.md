@@ -96,13 +96,13 @@ Sends product feedback to the MCP Gateway `submit_feedback` tool. The platform s
 
 `vibecodr install <codex|cursor|vscode|windsurf|claude-desktop|claude-code> [--scope user|project] [--path <dir>] [--name <server-name>] [--open-client] [--overwrite] [--dry-run]`
 
-Adds (or removes) the hosted Vibecodr MCP server to an app such as Codex, Cursor, VS Code, Windsurf, Claude Desktop, or Claude Code. In command syntax we call that app a `client`. `codex`, `vscode`, and `claude-code` prefer their own CLI shim (`codex mcp add`, `code --add-mcp`, `claude mcp add`) and fall back to writing the app config file. `cursor`, `windsurf`, and `claude-desktop` always write the app config file directly. Records the install in `installs.json` so `uninstall` can find it.
+Adds (or removes) the OAuth-backed Vibecodr MCP Gateway server to an app such as Codex, Cursor, VS Code, Windsurf, Claude Desktop, or Claude Code. In command syntax we call that app a `client`. `codex`, `vscode`, and `claude-code` prefer their own CLI shim (`codex mcp add`, `code --add-mcp`, `claude mcp add`) and fall back to writing the app config file. `cursor`, `windsurf`, and `claude-desktop` always write the app config file directly. Records the install in `installs.json` so `uninstall` can find it. Profiles pointed at `tools.vibecodr.space/mcp` are refused here because that hosted Agent Computer endpoint uses `vc_tools` grants, not editor-owned MCP Gateway OAuth sessions.
 
 ### `vibecodr connect` / `vibecodr agent connect` (H)
 
 `vibecodr connect --client <codex|cursor|vscode|windsurf|claude-desktop|claude-code> [--print] [--name <server-name>] [--install] [--overwrite]`
 
-Prints (`--print`) or installs (`--install`) the MCP connection details for the hosted Agent Computer. The `vibecodr agent connect` form is the agent-shaped alias; both reach the same code path.
+Prints (`--print`) the MCP connection details for the hosted Agent Computer. The `vibecodr agent connect` form is the agent-shaped alias; both reach the same code path. Named editor/client installs are skipped for `tools.vibecodr.space/mcp` until that client has a proven `vc_tools` grant flow; use `vibecodr install <client>` for the OAuth-backed MCP Gateway and `vibecodr start`/`vibecodr try` for CLI-owned Agent Computer credentials.
 
 ## Hosted browser (H)
 

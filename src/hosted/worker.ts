@@ -511,6 +511,7 @@ const MAX_JSON_BODY_BYTES = 32_768;
 const DEFAULT_GRANT_ISSUER = "https://api.vibecodr.space";
 const DEFAULT_GRANT_AUDIENCE = "vibecodr:vc-tools";
 const VC_TOOLS_GRANT_SCOPE = "vc-tools:use";
+const VC_TOOLS_REQUIRED_MCP_SCOPES = [VC_TOOLS_GRANT_SCOPE, "vc-tools:*"] as const;
 const INTERNAL_HOST_SUFFIXES = [".local", ".internal", ".localhost", ".home.arpa", ".lan"];
 const BROWSER_DNS_SAFETY_ERRORS = {
   status: 400,
@@ -674,6 +675,11 @@ async function handleRequest(request: Request, env: HostedEnv, ctx: ExecutionCon
     return new Response(null, { status: 204, headers: corsHeaders(request) });
   }
 
+  const oauthDiscovery = oauthDiscoveryResponse(path, method, env, request);
+  if (oauthDiscovery) {
+    return oauthDiscovery;
+  }
+
   if (method === "GET" && path === "/v1/health") {
     return json({
       ok: true,
@@ -747,6 +753,7 @@ async function handleRequest(request: Request, env: HostedEnv, ctx: ExecutionCon
     return json({
       transport: "streamable_http",
       url: `${publicBase(env)}/mcp`,
+      auth: mcpConnectionAuthMetadata(env, "/mcp"),
       ...(surface.details || surface.operator ? { scopes: capabilitiesForPlan(activePlanForAuth(auth, env)) } : {}),
       tools,
       protocolVersion: MCP_PROTOCOL_VERSION,
@@ -1409,6 +1416,7 @@ async function mcpResponse(request: Request, env: HostedEnv, ctx: ExecutionConte
       transport: "streamable_http",
       protocolVersion: MCP_PROTOCOL_VERSION,
       tools: MCP_TOOL_DESCRIPTORS,
+      auth: mcpConnectionAuthMetadata(env, "/mcp"),
       providerMode: providerMode(env)
     }, 200, request);
   }
@@ -1416,12 +1424,134 @@ async function mcpResponse(request: Request, env: HostedEnv, ctx: ExecutionConte
     const auth = await authenticate(request, env);
     if (!auth.ok) {
       recordAuthFailureMetric(env, ctx, request, auth);
-      return json({ code: auth.code, message: auth.message }, auth.status, request);
+      return jsonWithHeaders(
+        { code: auth.code, message: auth.message },
+        auth.status,
+        request,
+        { "WWW-Authenticate": mcpWwwAuthenticateHeader(request, env, auth) }
+      );
     }
     const body = await readJsonObject(request, MAX_JSON_BODY_BYTES);
     return json(await handleMcpJsonRpc(body, env, request, ctx, auth), 200, request);
   }
   return json({ code: "method.not_allowed", message: "MCP endpoint supports GET and POST." }, 405, request);
+}
+
+function oauthDiscoveryResponse(path: string, method: string, env: HostedEnv, request: Request): Response | undefined {
+  const resourcePath = protectedResourcePathFromMetadataPath(path);
+  if (resourcePath) {
+    if (method === "GET") {
+      return json(mcpProtectedResourceMetadata(env, resourcePath), 200, request);
+    }
+    if (method === "HEAD") {
+      return new Response(null, { status: 200, headers: responseHeaders(request) });
+    }
+    return json({ code: "method.not_allowed", message: "OAuth protected-resource metadata supports GET and HEAD." }, 405, request);
+  }
+
+  if (isAuthorizationServerDiscoveryPath(path)) {
+    if (method === "GET") {
+      return json({
+        code: "oauth.authorization_server_not_served",
+        message: "vc-tools is an OAuth protected resource, not the authorization server. Discover the issuer from protected-resource metadata.",
+        resourceMetadataUrl: mcpProtectedResourceMetadataUrl(env, "/mcp"),
+        authorizationServers: authorizationServersForMcp(env)
+      }, 404, request);
+    }
+    if (method === "HEAD") {
+      return new Response(null, { status: 404, headers: responseHeaders(request) });
+    }
+    return json({ code: "method.not_allowed", message: "OAuth authorization-server discovery supports GET and HEAD." }, 405, request);
+  }
+
+  return undefined;
+}
+
+function protectedResourcePathFromMetadataPath(path: string): "/" | "/mcp" | "/v1/mcp" | undefined {
+  switch (path) {
+    case "/.well-known/oauth-protected-resource":
+      return "/";
+    case "/.well-known/oauth-protected-resource/mcp":
+    case "/mcp/.well-known/oauth-protected-resource":
+      return "/mcp";
+    case "/.well-known/oauth-protected-resource/v1/mcp":
+    case "/v1/mcp/.well-known/oauth-protected-resource":
+      return "/v1/mcp";
+    default:
+      return undefined;
+  }
+}
+
+function isAuthorizationServerDiscoveryPath(path: string): boolean {
+  return path === "/.well-known/oauth-authorization-server"
+    || path === "/.well-known/openid-configuration"
+    || path === "/.well-known/oauth-authorization-server/mcp"
+    || path === "/.well-known/openid-configuration/mcp"
+    || path === "/.well-known/oauth-authorization-server/v1/mcp"
+    || path === "/.well-known/openid-configuration/v1/mcp"
+    || path === "/mcp/.well-known/oauth-authorization-server"
+    || path === "/mcp/.well-known/openid-configuration"
+    || path === "/v1/mcp/.well-known/oauth-authorization-server"
+    || path === "/v1/mcp/.well-known/openid-configuration";
+}
+
+function mcpProtectedResourceMetadata(env: HostedEnv, resourcePath: "/" | "/mcp" | "/v1/mcp"): Record<string, unknown> {
+  const base = publicBase(env).replace(/\/+$/, "");
+  const resource = resourcePath === "/" ? base : `${base}${resourcePath}`;
+  return {
+    resource,
+    authorization_servers: authorizationServersForMcp(env),
+    scopes_supported: [
+      ...VC_TOOLS_REQUIRED_MCP_SCOPES,
+      ...CAPABILITIES.map((capability) => `vc-tools:${capability}`)
+    ],
+    bearer_methods_supported: ["header"],
+    resource_name: resourcePath === "/" ? "vc-tools" : "vc-tools Agent Computer",
+    resource_documentation: "https://vibecodr.space",
+    resource_policy_uri: "https://vibecodr.space/privacy",
+    resource_tos_uri: "https://vibecodr.space/terms"
+  };
+}
+
+function authorizationServersForMcp(env: HostedEnv): string[] {
+  return [(env.VC_TOOLS_CLI_GRANT_ISSUER ?? DEFAULT_GRANT_ISSUER).replace(/\/+$/, "")];
+}
+
+function mcpProtectedResourceMetadataUrl(env: HostedEnv, resourcePath: "/mcp" | "/v1/mcp"): string {
+  const base = publicBase(env).replace(/\/+$/, "");
+  return resourcePath === "/v1/mcp"
+    ? `${base}/.well-known/oauth-protected-resource/v1/mcp`
+    : `${base}/.well-known/oauth-protected-resource/mcp`;
+}
+
+function mcpConnectionAuthMetadata(env: HostedEnv, resourcePath: "/mcp" | "/v1/mcp"): Record<string, unknown> {
+  const base = publicBase(env).replace(/\/+$/, "");
+  return {
+    type: "oauth_protected_resource",
+    resource: `${base}${resourcePath}`,
+    resourceMetadataUrl: mcpProtectedResourceMetadataUrl(env, resourcePath),
+    authorizationServers: authorizationServersForMcp(env),
+    scopes: [...VC_TOOLS_REQUIRED_MCP_SCOPES],
+    clientInstall: "manual_bearer_required"
+  };
+}
+
+function mcpWwwAuthenticateHeader(
+  request: Request,
+  env: HostedEnv,
+  auth: { ok: false; status: number; code: string; message: string }
+): string {
+  const path = normalizePath(new URL(request.url).pathname) === "/v1/mcp" ? "/v1/mcp" : "/mcp";
+  const params = [
+    auth.code === "auth.missing" ? "" : `error="${auth.code.includes("scope") ? "insufficient_scope" : "invalid_token"}"`,
+    `resource_metadata="${quoteHeaderParam(mcpProtectedResourceMetadataUrl(env, path))}"`,
+    `scope="${quoteHeaderParam(VC_TOOLS_REQUIRED_MCP_SCOPES.join(" "))}"`
+  ].filter(Boolean);
+  return `Bearer ${params.join(", ")}`;
+}
+
+function quoteHeaderParam(value: string): string {
+  return value.replace(/["\\\r\n]/g, "");
 }
 
 async function readJsonObject(request: Request, maxBytes: number): Promise<Record<string, unknown>> {
@@ -1443,13 +1573,22 @@ async function readJsonObject(request: Request, maxBytes: number): Promise<Recor
 }
 
 function json(body: unknown, status: number, request: Request): Response {
+  return jsonWithHeaders(body, status, request);
+}
+
+function jsonWithHeaders(body: unknown, status: number, request: Request, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: {
-      ...JSON_HEADERS,
-      ...corsHeaders(request)
-    }
+    headers: responseHeaders(request, extraHeaders)
   });
+}
+
+function responseHeaders(request: Request, extraHeaders: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...JSON_HEADERS,
+    ...corsHeaders(request),
+    ...extraHeaders
+  };
 }
 
 function jsonRpcId(value: unknown): string | number | null {
@@ -5883,7 +6022,11 @@ function recordAuthFailureMetric(
 }
 
 async function recordAuthFailureAudit(env: HostedEnv, request: Request, auth: Extract<AuthResult, { ok: false }>): Promise<void> {
-  const path = sanitizeOperatorAlertPath(new URL(request.url).pathname);
+  const rawPath = normalizePath(new URL(request.url).pathname);
+  if (isOAuthDiscoveryPath(rawPath)) {
+    return;
+  }
+  const path = sanitizeOperatorAlertPath(rawPath);
   const at = nowIso();
   if (providerMode(env) === "live" && env.DB) {
     await env.DB.prepare("INSERT INTO audit_events (id, actor_id, event, subject, path, job_id, at) VALUES (?, ?, ?, ?, ?, ?, ?)")
@@ -5898,6 +6041,10 @@ async function recordAuthFailureAudit(env: HostedEnv, request: Request, auth: Ex
     path,
     at
   }));
+}
+
+function isOAuthDiscoveryPath(path: string): boolean {
+  return protectedResourcePathFromMetadataPath(path) !== undefined || isAuthorizationServerDiscoveryPath(path);
 }
 
 async function recordHostedDenialMetricIfNeeded(

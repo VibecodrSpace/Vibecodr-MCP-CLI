@@ -657,7 +657,11 @@ async function commandConnect(context: CommandContext, parsed: ParsedCommandOpti
 
   const warnings: string[] = [];
   let installResult: InstallResult | undefined;
-  if (!printOnly && url && isInstallableClient(clientName)) {
+  const namedClientAuthBlocked = url !== undefined && hostedAgentComputerClientAuthBlocked(clientName, url, publicConnection);
+  if (namedClientAuthBlocked) {
+    warnings.push(hostedAgentComputerClientAuthMessage(clientName));
+  }
+  if (!printOnly && url && isInstallableClient(clientName) && !namedClientAuthBlocked) {
     try {
       installResult = await installClient({
         client: clientName,
@@ -1855,6 +1859,12 @@ function formatAgentConnectionSummary(
     return lines.join("\n");
   }
 
+  if (hostedAgentComputerClientAuthBlocked(clientName, url, connection)) {
+    lines.push("", hostedAgentComputerClientAuthMessage(clientName));
+    lines.push("Next: use `vibecodr start` or `vibecodr try` for the hosted Agent Computer, and use `vibecodr install " + clientName + "` for the OAuth-backed Vibecodr MCP Gateway.");
+    return lines.join("\n");
+  }
+
   const snippet = clientConfigSnippet(clientName, url, serverName);
   if (snippet) {
     lines.push("", `Add this to ${snippet.label}:`, "", snippet.code);
@@ -1863,6 +1873,34 @@ function formatAgentConnectionSummary(
     lines.push("", "Next: add this MCP URL to the agent client, then ask it to use the Vibecodr Agent Computer.");
   }
   return lines.join("\n");
+}
+
+function hostedAgentComputerClientAuthBlocked(clientName: string, url: string, connection: Record<string, unknown>): boolean {
+  if (!isInstallableClient(clientName)) {
+    return false;
+  }
+  if (!isHostedAgentComputerMcpUrl(url)) {
+    return false;
+  }
+  const auth = typeof connection.auth === "object" && connection.auth !== null && !Array.isArray(connection.auth)
+    ? connection.auth as Record<string, unknown>
+    : {};
+  return auth.clientInstall !== "oauth_client_supported";
+}
+
+function hostedAgentComputerClientAuthMessage(clientName: string): string {
+  return `${clientLabel(clientName)} install skipped: tools.vibecodr.space/mcp uses vc-tools grants, and this CLI will not write a bare editor config until that client auth flow is explicitly supported.`;
+}
+
+function isHostedAgentComputerMcpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && url.hostname === "tools.vibecodr.space"
+      && (url.pathname === "/mcp" || url.pathname === "/v1/mcp");
+  } catch {
+    return false;
+  }
 }
 
 function clientLabel(clientName: string): string {
