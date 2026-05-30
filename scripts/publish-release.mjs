@@ -130,6 +130,7 @@ if (!skipVerify) {
   runNpm(["run", "verify"]);
 }
 
+runNpm(["run", "clean:pack-artifacts"]);
 runNpm(["publish", "--access", "public", "--tag", tag, ...(dryRun ? ["--dry-run"] : [])]);
 
 if (!dryRun) {

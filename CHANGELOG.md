@@ -2,6 +2,13 @@
 
 Pre-1.0.0 history for the `@vibecodr/cli@0.2.x` and `0.1.x` lines lives at [`docs/legacy/CHANGELOG-mcp-cli.md`](docs/legacy/CHANGELOG-mcp-cli.md). The `@vibecodr/vc-tools@0.1.x` line was the other half of the May 2026 merge; its source history is preserved in the archived [`BradenHartsell/vc-tools`](https://github.com/BradenHartsell/vc-tools) repository.
 
+## 1.0.11
+
+Supersedes 1.0.10 with the same CLI auth guidance plus a release-packaging guard.
+
+- `prepack`, `publish:release`, and `verify:artifact` now remove and forbid `dist/dryrun/` so Wrangler dry-run output can never be swept into the npm package.
+- Published after the `vc-tools-api` worker read back `1.0.10`; the runtime behavior remains the first-run guidance from 1.0.10.
+
 ## 1.0.10
 
 Aligns the CLI first-run guidance with the Vibecodr CLI product pages without renaming Agent Computer, MCP Gateway, or the underlying credential lanes.

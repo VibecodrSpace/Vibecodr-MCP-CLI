@@ -79,6 +79,7 @@ const forbiddenPackagePaths = pack.files
     file.startsWith("test/") ||
     file.startsWith("scripts/") ||
     file.startsWith("migrations/") ||
+    file.startsWith("dist/dryrun/") ||
     file.startsWith("dist/hosted/") ||
     file.startsWith("dist-worker/") ||
     file === "Dockerfile" ||
