@@ -21,7 +21,7 @@ test("help and version identify the separate vc-tools CLI", async () => {
     assert.match(help.stdout, /start\s+Connect and verify the Agent Computer/);
     assert.match(help.stdout, /try\s+Run a small browser, computer, proof, and usage check/);
     assert.match(help.stdout, /computer\s+Start\/status\/run commands/);
-    assert.match(help.stdout, /browser\s+Ask the hosted Browser/);
+    assert.match(help.stdout, /browser\s+Capture, read, render, crawl, or inspect public HTTPS pages/);
     assert.match(help.stdout, /limits\s+Alias for usage/);
     assert.match(help.stdout, /auth, login, logout/);
     assert.match(help.stdout, /--credential-file <path>/);
@@ -80,7 +80,11 @@ test("subcommand help, quiet mode, and suggestions follow CLI conventions", asyn
   try {
     assert.equal(browserHelp.code, 0);
     assert.match(browserHelp.stdout, /browser crawl <https-url> \[--max-pages n\] \[--max-depth n\] \[--local\|--out \.\/proof\]/);
+    assert.match(browserHelp.stdout, /browser snapshot <https-url> \[--local\|--out \.\/proof\]/);
+    assert.doesNotMatch(browserHelp.stdout, /browser snapshot <https-url> .*instructions/);
+    assert.match(browserHelp.stdout, /browser ask <https-url> --note <text> \[--local\|--out \.\/proof\]/);
     assert.match(browserHelp.stdout, /Add --local to save completed output into \.\/vibecodr-proof automatically/);
+    assert.match(browserHelp.stdout, /browser snapshot captures page state; it does not prompt an agent or model/);
   } finally {
     await browserHelp.cleanup();
   }
@@ -803,6 +807,85 @@ test("tools test keeps Quick Actions short while allowing paid agent task payloa
     });
   } finally {
     await agentTask.cleanup();
+  }
+});
+
+test("browser snapshot stays a no-prompt capture command", async () => {
+  const snapshot = await runWithMockApi([
+    "--json",
+    "--token",
+    token,
+    "browser",
+    "snapshot",
+    "https://example.com",
+    "--no-wait"
+  ], [
+    {
+      method: "POST",
+      path: "/v1/tools/test",
+      response: (request: RecordedRequest) => ({ jobId: "job_snapshot", echo: request.body })
+    }
+  ]);
+  try {
+    assert.equal(snapshot.code, 0);
+    const body = JSON.parse(snapshot.stdout);
+    assert.deepEqual(body.data.echo, {
+      capability: "browser.agent_task",
+      input: {
+        url: "https://example.com/"
+      }
+    });
+  } finally {
+    await snapshot.cleanup();
+  }
+
+  const withInstructions = await runWithMockApi([
+    "--json",
+    "--token",
+    token,
+    "browser",
+    "snapshot",
+    "https://example.com",
+    "--instructions",
+    "Summarize this."
+  ]);
+  try {
+    assert.equal(withInstructions.code, 2);
+    assert.equal(withInstructions.requests.length, 0);
+    assert.match(withInstructions.stderr, /browser snapshot captures the page state; it does not prompt an agent or model/);
+  } finally {
+    await withInstructions.cleanup();
+  }
+
+  const ask = await runWithMockApi([
+    "--json",
+    "--token",
+    token,
+    "browser",
+    "ask",
+    "https://example.com",
+    "--note",
+    "Save this note with the snapshot.",
+    "--no-wait"
+  ], [
+    {
+      method: "POST",
+      path: "/v1/tools/test",
+      response: (request: RecordedRequest) => ({ jobId: "job_ask", echo: request.body })
+    }
+  ]);
+  try {
+    assert.equal(ask.code, 0);
+    const body = JSON.parse(ask.stdout);
+    assert.deepEqual(body.data.echo, {
+      capability: "browser.agent_task",
+      input: {
+        url: "https://example.com/",
+        instructions: "Save this note with the snapshot."
+      }
+    });
+  } finally {
+    await ask.cleanup();
   }
 });
 

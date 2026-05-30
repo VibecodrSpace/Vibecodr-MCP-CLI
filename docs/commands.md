@@ -114,11 +114,11 @@ Prints (`--print`) the MCP connection details for the hosted Agent Computer. The
 - `browser render <https-url> [--local|--out ./proof] [--no-wait] [--details]`
 - `browser pdf <https-url> [--local|--out ./proof] [--no-wait] [--details]`
 - `browser crawl <https-url> [--max-pages n] [--max-depth n] [--local|--out ./proof]`
-- `browser snapshot <https-url> [--instructions <text>] [--local|--out ./proof]`
-- `browser ask <https-url> --instructions <text>`
+- `browser snapshot <https-url> [--local|--out ./proof]`
+- advanced compatibility: `browser ask <https-url> --note <text> [--local|--out ./proof]`
 
 Public HTTPS URLs only. Localhost, private network ranges, URL credentials, and internal hostnames are blocked before any hosted work is submitted. `--no-wait` returns immediately with a `jobId` you can follow via `vibecodr work follow`. `--details` includes capability metadata in the response.
-Use `--local` to save the completed output into `./vibecodr-proof` automatically, or `--out` when you want to choose the destination.
+Use `--local` to save the completed output into `./vibecodr-proof` automatically, or `--out` when you want to choose the destination. `browser snapshot` captures page state; it does not prompt an agent or model. The old `browser ask` compatibility form only saves your note with the snapshot; it is not a chat answerer.
 
 ## Hosted computer (H)
 

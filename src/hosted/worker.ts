@@ -585,7 +585,7 @@ const MCP_TOOL_DESCRIPTORS: McpToolDescriptor[] = AGENT_TOOL_NAMES.map(({ name, 
   capability,
   title: titleForAgentTool(name, capability),
   description: descriptionForAgentTool(name, capability),
-  inputSchema: inputSchemaForCapability(capability)
+  inputSchema: inputSchemaForAgentTool(name, capability)
 }));
 
 const handler = {
@@ -6265,7 +6265,7 @@ function descriptionForAgentTool(name: string, capability: CapabilityName): stri
     "browser.read": "Read a public HTTPS page as markdown without exposing private networks or authenticated browser state.",
     "browser.pdf": "Render a PDF from a public HTTPS page within quota and retention policy.",
     "browser.crawl": "Crawl a bounded public HTTPS site and save the result as proof.",
-    "browser.snapshot": "Capture a bounded hosted Browser inspection snapshot for the calling agent to analyze.",
+    "browser.snapshot": "Capture a bounded hosted Browser page-state snapshot. This does not prompt a model or return a chat answer.",
     "computer.run": "Submit a bounded command to the hosted Agent Computer. The command is never executed on the user's local machine.",
     "computer.test": "Submit a bounded test command to the hosted Agent Computer. Public HTTP(S) is available by default; private/internal destinations stay blocked.",
     "proof.get": "Read saved proof/artifact metadata for the authenticated account.",
@@ -6291,6 +6291,21 @@ function descriptionForCapability(name: CapabilityName): string {
     "job.status": "Read hosted work status and failure metadata.",
     "job.cancel": "Cancel queued or running hosted work when explicitly confirmed."
   })[name];
+}
+
+function inputSchemaForAgentTool(name: string, capability: CapabilityName): Record<string, unknown> {
+  if (name === "browser.snapshot") {
+    return {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "HTTPS public URL. Localhost, private IPs, URL credentials, and internal hosts are denied." },
+        timeoutMs: { type: "integer", minimum: 1000, maximum: MAX_BROWSER_AGENT_TASK_TIMEOUT_MS }
+      },
+      required: ["url"],
+      additionalProperties: false
+    };
+  }
+  return inputSchemaForCapability(capability);
 }
 
 function inputSchemaForCapability(name: CapabilityName): Record<string, unknown> {

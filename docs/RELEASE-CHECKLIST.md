@@ -123,7 +123,7 @@ vibecodr browser screenshot https://example.com --format png
 vibecodr browser read https://example.com
 vibecodr browser pdf https://example.com
 vibecodr browser crawl https://example.com/docs --max-pages 5 --max-depth 1
-vibecodr browser ask https://example.com --timeout-ms 1200000 --idle-timeout-ms 600000 --instructions "Inspect the page and save a concise snapshot."
+vibecodr browser snapshot https://example.com --local
 vibecodr computer run "node --version"
 vibecodr usage
 vibecodr grants list

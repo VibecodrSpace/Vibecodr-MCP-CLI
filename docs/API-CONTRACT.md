@@ -203,6 +203,13 @@ so callers are not left with only a terminal status. `--no-wait` returns the
 queued hosted job response for advanced callers. `--details` includes the raw
 work response.
 
+`browser snapshot <https-url>` is intentionally a no-prompt capture command: it
+captures page state and saves/returns the artifact, but it does not ask a model
+for an answer and does not accept `--instructions`. The old
+`browser ask <url> --note <text>` compatibility form is advanced-only and
+stores a caller note with the same snapshot artifact; it is not a separate
+chat-answering lane.
+
 Agent Computer command payloads default to public HTTP(S) network availability
 for paid hosted runs. The CLI also accepts `--network public` and
 `--network off`; no user flag enables private, local, metadata, or internal

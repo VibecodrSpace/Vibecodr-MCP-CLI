@@ -835,13 +835,16 @@ async function commandBrowser(context: CommandContext, subcommand: string | unde
       return submitHostedCapability(context, "browser.pdf", parsed, "Asked the hosted Browser to create a PDF.", { autoFollow: true });
     case "crawl":
       return submitHostedCapability(context, "browser.crawl", parsed, "Asked the hosted Browser to crawl the public site.", { autoFollow: true });
-    case "snapshot":
+    case "snapshot": {
+      const normalized = normalizeBrowserSnapshotOptions(parsed);
+      return submitHostedCapability(context, "browser.snapshot", normalized, "Captured a hosted Browser snapshot.", { autoFollow: true });
+    }
     case "ask": {
       const normalized = normalizeBrowserAskOptions(parsed);
-      return submitHostedCapability(context, "browser.ask", normalized, "Asked the hosted Browser to capture an inspection snapshot for your agent.", { autoFollow: true });
+      return submitHostedCapability(context, "browser.ask", normalized, "Captured a hosted Browser snapshot with your note attached.", { autoFollow: true });
     }
     default:
-      throw unknownSubcommandError("browser", subcommand, ["render", "screenshot", "read", "markdown", "pdf", "crawl", "snapshot", "ask"], "Use vibecodr browser screenshot <https-url>, browser read <https-url>, or browser snapshot <https-url> --instructions <text>.");
+      throw unknownSubcommandError("browser", subcommand, ["render", "screenshot", "read", "markdown", "pdf", "crawl", "snapshot", "ask"], "Use vibecodr browser screenshot <https-url>, browser read <https-url>, or browser snapshot <https-url> --local.");
   }
 }
 
@@ -1237,11 +1240,39 @@ function userToolName(capability: CapabilityName): string {
   return capability;
 }
 
+function normalizeBrowserSnapshotOptions(parsed: ParsedCommandOptions): ParsedCommandOptions {
+  const [url, ...extraParts] = parsed.positionals;
+  if (extraParts.length > 0 || parsed.flags.instructions !== undefined || parsed.flags.note !== undefined) {
+    throw new CliError(
+      "input.snapshot_is_not_prompted",
+      "browser snapshot captures the page state; it does not prompt an agent or model. Remove the note/instructions, or use `vibecodr browser ask <url> --note \"...\"` for the advanced compatibility lane.",
+      2
+    );
+  }
+  return {
+    positionals: url === undefined ? [] : [url],
+    flags: parsed.flags
+  };
+}
+
 function normalizeBrowserAskOptions(parsed: ParsedCommandOptions): ParsedCommandOptions {
   const [url, ...instructionParts] = parsed.positionals;
   const flags = { ...parsed.flags };
+  const note = getStringFlag(flags, "note");
+  const instructions = getStringFlag(flags, "instructions");
+  if (instructions === undefined && note !== undefined) {
+    flags.instructions = note;
+  }
+  delete flags.note;
   if (getStringFlag(flags, "instructions") === undefined && instructionParts.length > 0) {
     flags.instructions = instructionParts.join(" ");
+  }
+  if (getStringFlag(flags, "instructions") === undefined) {
+    throw new CliError(
+      "input.ask_note_required",
+      "browser ask is an advanced compatibility alias and needs a note. For a normal capture, use `vibecodr browser snapshot <url> --local`.",
+      2
+    );
   }
   return {
     positionals: url === undefined ? [] : [url],
@@ -3178,7 +3209,7 @@ Commands:
   try         Run a small browser, computer, proof, and usage check.
   agent       Connect an agent to the hosted computer or check readiness.
   computer    Start/status/run commands on the hosted Agent Computer.
-  browser     Ask the hosted Browser to render, read, screenshot, crawl, or inspect public HTTPS pages.
+  browser     Capture, read, render, crawl, or inspect public HTTPS pages with the hosted Browser.
   work        List, follow, show, or cancel hosted work.
   proof       List, show, save, or delete saved outputs and artifacts.
   usage       Show account-scoped Agent Computer capacity and quota progress.
@@ -3276,12 +3307,15 @@ Usage:
   vibecodr browser render <https-url> [--local|--out ./proof] [--no-wait] [--details]
   vibecodr browser pdf <https-url> [--local|--out ./proof] [--no-wait] [--details]
   vibecodr browser crawl <https-url> [--max-pages n] [--max-depth n] [--local|--out ./proof]
-  vibecodr browser snapshot <https-url> [--instructions <text>] [--local|--out ./proof]
-  vibecodr browser ask <https-url> --instructions <text>
+  vibecodr browser snapshot <https-url> [--local|--out ./proof]
+
+Advanced compatibility:
+  vibecodr browser ask <https-url> --note <text> [--local|--out ./proof]
 
 Notes:
   Add --local to save completed output into ./vibecodr-proof automatically.
-  browser snapshot captures a bounded inspection snapshot for your agent to analyze. browser ask is a compatibility alias; it is not a separate chat answerer.
+  browser snapshot captures page state; it does not prompt an agent or model.
+  browser ask saves your note with the snapshot; it is not a chat answerer.
 `;
     case "work":
       return `vibecodr work

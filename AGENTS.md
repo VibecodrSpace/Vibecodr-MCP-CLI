@@ -53,6 +53,7 @@ Preserve these invariants:
 - keep MCP tool invocation behavior compatible with the hosted gateway contract
 - prefer narrow commands and shaped responses over broad "do anything" wrappers
 - keep completed hosted-work output useful without archaeology: browser/computer/work follow commands must surface artifact handles and support `--local` for saving into `./vibecodr-proof`
+- keep `browser snapshot` a no-prompt capture lane: do not advertise `--instructions`, and do not expose `instructions`/`actions` on the normal MCP `browser.snapshot` schema unless the feature actually answers or acts on them
 - keep human CLI help/status/errors guided for lowest-context users while leaving
   `--json`, credential lanes, command routing, and backend diagnostics explicit
   for power users and operators

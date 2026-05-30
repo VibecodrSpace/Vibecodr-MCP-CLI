@@ -529,6 +529,12 @@ test("hosted worker implements MCP initialize, tools/list, and tools/call contra
   assert.equal(listed.response.status, 200);
   assert.equal(listed.body.result.tools.some((tool: { name: string; capability: string; inputSchema: unknown }) => tool.name === "computer.run" && tool.capability === "sandbox.run_command" && tool.inputSchema), true);
   assert.equal(listed.body.result.tools.some((tool: { name: string; capability: string; inputSchema: unknown }) => tool.name === "usage.status" && tool.capability === "usage.read" && tool.inputSchema), true);
+  const snapshotTool = listed.body.result.tools.find((tool: { name: string }) => tool.name === "browser.snapshot") as { description: string; inputSchema: { properties: Record<string, unknown> } } | undefined;
+  assert.ok(snapshotTool);
+  assert.match(snapshotTool.description, /does not prompt a model/);
+  assert.equal("url" in snapshotTool.inputSchema.properties, true);
+  assert.equal("instructions" in snapshotTool.inputSchema.properties, false);
+  assert.equal("actions" in snapshotTool.inputSchema.properties, false);
 
   const called = await fetchWorker("https://tools.vibecodr.space/mcp", env, mcpRequest("mcp-token", {
     jsonrpc: "2.0",
