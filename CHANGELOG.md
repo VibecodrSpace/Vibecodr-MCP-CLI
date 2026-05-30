@@ -2,6 +2,15 @@
 
 Pre-1.0.0 history for the `@vibecodr/cli@0.2.x` and `0.1.x` lines lives at [`docs/legacy/CHANGELOG-mcp-cli.md`](docs/legacy/CHANGELOG-mcp-cli.md). The `@vibecodr/vc-tools@0.1.x` line was the other half of the May 2026 merge; its source history is preserved in the archived [`BradenHartsell/vc-tools`](https://github.com/BradenHartsell/vc-tools) repository.
 
+## 1.0.10
+
+Aligns the CLI first-run guidance with the Vibecodr CLI product pages without renaming Agent Computer, MCP Gateway, or the underlying credential lanes.
+
+- `vibecodr --help` and `vibecodr login --help` now put `vibecodr start` first for the normal Agent Computer account connection, while keeping `vibecodr login` as the explicit MCP Gateway login for publishing, uploads, Pulses, and MCP Gateway tools.
+- `vibecodr status` now points brand-new users to `vibecodr start` first. After Agent Computer is connected, missing MCP Gateway auth is framed as optional and scoped to the MCP Gateway/publishing surfaces.
+- `vibecodr doctor` and `vibecodr install` now use the same setup boundary: apps own their MCP Gateway OAuth sessions, and `vibecodr start` owns Agent Computer setup.
+- Docs and tests lock the behavior while preserving the separate `@vibecodr/vc-tools` and `@vibecodr/mcp` credential stores internally.
+
 ## 1.0.9
 
 Fixes the hosted Agent Computer MCP auth contract at `tools.vibecodr.space/mcp`.

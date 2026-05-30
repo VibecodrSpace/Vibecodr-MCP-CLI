@@ -12,8 +12,8 @@ function loginHelpText(): string {
     "       vibecodr login agent [--no-browser] [--credential-file <path> | --credential-stdin]",
     "",
     "Most people:",
+    "  vibecodr start        Approve the Agent Computer account connection.",
     "  vibecodr login        Sign in for publishing, uploads, Pulses, and MCP Gateway tools.",
-    "  vibecodr start        Sign in and verify the hosted Agent Computer.",
     "",
     "Explicit lanes:",
     "  vibecodr login mcp    Same as vibecodr login; uses browser OAuth.",
@@ -75,7 +75,7 @@ export async function runLoginCommand(args: string[], context: CommandContext): 
       `Registration mode: ${result.registrationMode}`,
       `Expires at: ${result.expiresAt || "unknown"}`,
       `Refresh token: ${result.hasRefreshToken ? "available" : "not issued"}`,
-      "Next: run `vibecodr status` to see what is connected.",
+      "Next: run `vibecodr status` to see Agent Computer and MCP Gateway state.",
       "Note: Codex, Cursor, Claude, VS Code, and Windsurf have their own OAuth sessions. Use `vibecodr install codex` or another supported app name to add Vibecodr there."
     ]
   );

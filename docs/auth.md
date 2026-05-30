@@ -1,13 +1,20 @@
 # Auth
 
-`vibecodr login` defaults to authenticating the CLI itself to the hosted Vibecodr MCP server. It does not log Codex, Cursor, VS Code, Windsurf, ChatGPT, or any other MCP client into MCP.
+The normal public setup path is `vibecodr start`. It opens the browser approval
+flow shown on the Vibecodr CLI pages, stores the hosted Agent Computer
+credential for this machine, and returns the connection details an agent needs.
+
+`vibecodr login` is still the explicit MCP Gateway login for publishing,
+uploads, Pulses, and direct MCP Gateway tools. It does not log Codex, Cursor, VS
+Code, Windsurf, ChatGPT, or any other MCP client into MCP.
 
 Vibecodr now has two CLI credential lanes:
 
 - MCP Gateway: `vibecodr login` or `vibecodr login mcp`, stored under the historical `@vibecodr/mcp` service.
 - Hosted Agent Computer: `vibecodr login agent` or the automatic `vibecodr start` approval flow, stored under the historical `@vibecodr/vc-tools` service.
 
-The token types are intentionally separate. Status and doctor can read both lanes, but the CLI does not merge or copy credentials between them.
+The token types are intentionally separate. Status and doctor can read both lanes,
+but the CLI does not merge or copy credentials between them.
 
 Compatibility alias:
 

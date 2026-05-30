@@ -70,7 +70,8 @@ test("vibecodr root help starts with guided consumer paths and keeps power flags
   const result = await run(vibecodrMcp, []);
   assert.equal(result.code, 0, `vibecodr help failed:\n${result.stderr}\n${result.stdout}`);
   assert.match(result.stdout, /Start here:/);
-  assert.match(result.stdout, /vibecodr status\s+See what is already connected/);
+  assert.match(result.stdout, /vibecodr start\s+Approve the Agent Computer account connection/);
+  assert.match(result.stdout, /vibecodr status\s+See Agent Computer and MCP Gateway state/);
   assert.match(result.stdout, /Do useful things:/);
   assert.match(result.stdout, /vibecodr feedback/);
   assert.match(result.stdout, /For scripts and advanced use:/);

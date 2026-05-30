@@ -10,9 +10,10 @@ The Vibecodr CLI talks to two hosted endpoints. Every command targets exactly on
 
 The three bin entries — `vibecodr`, `vibecodr-mcp`, `vc-tools` — all resolve to the same dispatcher. The `vc-tools` bin remains for back-compat and routes every command through the legacy code path so output is byte-equivalent to `@vibecodr/vc-tools@0.1.4`. The `vibecodr` bin runs the MCP-gateway commands inline and cross-routes the hosted Agent Computer commands into the legacy code path. The `vibecodr-mcp` bin is the alias preserved from `@vibecodr/cli@0.2.x`.
 
-The human-facing command experience is deliberately guided: `vibecodr`,
-`vibecodr status`, and `vibecodr doctor` should answer what to do next before
-they teach service names. The architecture underneath remains explicit:
+The human-facing command experience is deliberately guided: `vibecodr start` is
+the normal public setup path, and `vibecodr`, `vibecodr status`, and
+`vibecodr doctor` should answer what to do next before they teach service names.
+The architecture underneath remains explicit:
 commands still route to one hosted endpoint, JSON stays stable for scripts, and
 diagnostics preserve the real credential/service boundary.
 

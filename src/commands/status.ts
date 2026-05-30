@@ -97,11 +97,11 @@ function formatCredentialKind(kind: BrokeredCredential["kind"]): string {
 function statusNextStep(credentialSurfaces: CredentialSurfaceStatus[]): string {
   const agentComputer = credentialSurfaces.find((surface) => surface.surface === "agentComputer");
   const mcpGateway = credentialSurfaces.find((surface) => surface.surface === "mcpGateway");
-  if (!mcpGateway?.authenticated) {
-    return "Next: run `vibecodr login` for publishing, uploads, Pulses, and MCP Gateway tools.";
-  }
   if (!agentComputer?.authenticated) {
-    return "Next: run `vibecodr start` when you want hosted browser/computer work.";
+    return "Next: run `vibecodr start` to approve the Agent Computer account connection.";
+  }
+  if (!mcpGateway?.authenticated) {
+    return "Next: run `vibecodr login` only if you use publishing, uploads, Pulses, or MCP Gateway tools.";
   }
   return "Next: run `vibecodr browser read https://example.com` or `vibecodr mcp tools`.";
 }

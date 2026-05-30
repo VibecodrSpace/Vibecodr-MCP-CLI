@@ -106,7 +106,7 @@ export async function runInstallCommand(args: string[], context: CommandContext)
       `Managed: yes`,
       result.nextStep,
       ...(result.notes || []),
-      `${clientDisplayName(result.client)} config install only. CLI auth and installed-client auth remain separate.`
+      `${clientDisplayName(result.client)} config install only. The app owns its MCP Gateway OAuth session; use \`vibecodr start\` for Agent Computer setup.`
     ]
   );
 }

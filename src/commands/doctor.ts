@@ -61,7 +61,7 @@ function nextStepForCheck(check: DoctorCheck): string | undefined {
     return "Run `vibecodr login` for publishing, uploads, Pulses, and MCP Gateway tools.";
   }
   if (check.id === "agent-computer-credential") {
-    return "Run `vibecodr start` when you want hosted browser/computer work.";
+    return "Run `vibecodr start` to approve the Agent Computer account connection.";
   }
   if (check.id === "refresh-token") {
     return "Run `vibecodr login` to refresh this CLI session.";

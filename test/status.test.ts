@@ -93,7 +93,7 @@ test("status --show-installs distinguishes configured, missing, and external man
     assert.deepEqual(installs.map((install) => install.status), ["configured", "missing", "external"]);
     assert.ok(humanLines.includes("Vibecodr status"));
     assert.ok(humanLines.some((line) => line.includes("MCP Gateway: not authenticated")));
-    assert.ok(humanLines.some((line) => line.includes("Next: run `vibecodr login`")));
+    assert.ok(humanLines.some((line) => line.includes("Next: run `vibecodr start`")));
     assert.ok(humanLines.includes("Details:"));
     assert.ok(humanLines.some((line) => line.includes("[configured]")));
     assert.ok(humanLines.some((line) => line.includes("[missing]")));
@@ -105,4 +105,53 @@ test("status --show-installs distinguishes configured, missing, and external man
       process.env["VIBECDR_MCP_INSTALL_MANIFEST_PATH"] = previousManifestPath;
     }
   }
+});
+
+test("status suggests MCP Gateway login only after Agent Computer is connected", async () => {
+  const humanLines: string[] = [];
+  await runStatusCommand([], {
+    globalOptions: {
+      profile: "default",
+      json: false,
+      verbose: false,
+      nonInteractive: false
+    },
+    output: {
+      success(_value: Record<string, unknown>, lines: string[]) {
+        humanLines.push(...lines);
+      }
+    },
+    tokenManager: {
+      resolveProfile: async () => ({
+        profileName: "default",
+        profile: {
+          serverUrl: "https://openai.vibecodr.space/mcp",
+          browserMode: "print",
+          registrationMode: "auto",
+          defaultInstallScope: "user",
+          logLevel: "normal"
+        },
+        serverUrl: "https://openai.vibecodr.space/mcp"
+      }),
+      getSession: async () => undefined,
+      sessionState: () => "none"
+    },
+    configStore: {} as never,
+    secretStore: {} as never,
+    runtimeClient: {} as never,
+    credentialBroker: {
+      getCredentialForEndpoint: async (endpoint: string) => endpoint === "tools.vibecodr.space"
+        ? {
+            endpoint: "tools.vibecodr.space",
+            kind: "api_key",
+            value: "redacted-test-key",
+            serviceId: "@vibecodr/vc-tools"
+          }
+        : undefined
+    }
+  } as never);
+
+  assert.ok(humanLines.some((line) => line.includes("Agent Computer: signed in via API key")));
+  assert.ok(humanLines.some((line) => line.includes("MCP Gateway: not authenticated")));
+  assert.ok(humanLines.some((line) => line.includes("Next: run `vibecodr login` only if")));
 });

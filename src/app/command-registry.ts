@@ -10,7 +10,7 @@ export interface CommandDefinition {
 export const COMMAND_REGISTRY: readonly CommandDefinition[] = [
   { name: "login", surface: "shared", summary: "Authorize the CLI against Vibecodr surfaces." },
   { name: "logout", surface: "shared", summary: "Clear stored Vibecodr CLI credentials." },
-  { name: "status", surface: "shared", summary: "Show MCP Gateway and Agent Computer credential state." },
+  { name: "status", surface: "shared", summary: "Show Agent Computer and MCP Gateway credential state." },
   { name: "whoami", surface: "mcp-gateway", summary: "Show the connected Vibecodr account from the MCP Gateway." },
   { name: "doctor", surface: "shared", summary: "Diagnose gateway, install, and hosted readiness." },
   { name: "install", surface: "shared", summary: "Install the MCP gateway into an agent client." },
@@ -19,7 +19,7 @@ export const COMMAND_REGISTRY: readonly CommandDefinition[] = [
   { name: "update", surface: "shared", summary: "Check or run CLI package updates." },
   { name: "feedback", surface: "shared", summary: "Send product feedback straight to the Vibecodr dev." },
 
-  { name: "start", surface: "agent-computer", summary: "Connect and verify the hosted Agent Computer." },
+  { name: "start", surface: "agent-computer", summary: "Approve and verify the hosted Agent Computer connection." },
   { name: "setup", surface: "agent-computer", summary: "Compatibility alias for start.", preferred: "start" },
   { name: "try", surface: "agent-computer", summary: "Run a small Agent Computer end-to-end check." },
   { name: "agent", surface: "agent-computer", summary: "Connect an agent to the hosted computer." },
